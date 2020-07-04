@@ -1,0 +1,6 @@
+﻿  source.c
+C:\Users\david\Documents\Github\PineGL\PineGL\src\source.c(36,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\david\Documents\Github\PineGL\PineGL\src\source.c(67,63): warning C4090: '=': different 'const' qualifiers
+C:\Users\david\Documents\Github\PineGL\PineGL\src\source.c(80,55): warning C4047: '=': 'char *' differs in levels of indirection from 'char (*)[19]'
+C:\Users\david\Documents\Github\PineGL\PineGL\src\source.c(84,14): warning C4047: '=': 'char ***' differs in levels of indirection from 'char **'
+  PineGL.vcxproj -> C:\Users\david\Documents\Github\PineGL\x64\Debug\PineGL.exe
