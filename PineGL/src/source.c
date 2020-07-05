@@ -60,32 +60,24 @@ int CheckValidationLayerSupport() {
 
 }
 void GetRequiredExtensions(unsigned int* count, char*** names) {//pointer to a pointer to arrays(pointers)
-	char** list;//is an array of pointer strings
-	//get extensions required by glfw-----------------------------
-	uint32_t glfwExtensionCount = 0;
-	//get glfw required extensions
-	list = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);//will get us the count and strings of extentions
-	*count = glfwExtensionCount;
+	char** list;//points to an array of strings
+	unsigned int listCount = 0;
 
+	//add glfw required extentions to list
+	list = glfwGetRequiredInstanceExtensions(&listCount);//fill list and get count
+	
 	if (enableValidationLayers) {
-		//get extentions for validation layers-------------------------------------
-		(*count)++;
-		//get the new array of string pointers
-		char** tmpList = malloc(glfwExtensionCount+1 * sizeof(char*));
-		//fill the new array of string pointers
-		for (unsigned int i = 0; i < glfwExtensionCount; i++) {
-			tmpList[i] = list[i];
-		}
-		free(list);//dunno if this frees the strings, hopefully not
-		tmpList[glfwExtensionCount ] = "VK_EXT_debug_utils";
+		//add validation layer extention to list---------------------------------
+		//need to realocate list
+		listCount++;
+		char** tmpList = malloc(sizeof(char*) * listCount);
+		memcpy(tmpList, list, (listCount - 1)*sizeof(char*));//copy the addresses from list to tmplist using count+1-1
+		//free(list);
+		tmpList[listCount - 1] = "VK_EXT_debug_utils";
 		list = tmpList;
-
-
-		int tmpArray[] = { 1,2,3,4 };
-		*(tmpArray + 2) = 3;
-
 	}
-	names = list;
+	*count = listCount;
+	*names = list;
 }
 
 int main() {
@@ -115,11 +107,9 @@ int main() {
 	unsigned int extentionCount = 0;
 	char** extentions=NULL;
 	GetRequiredExtensions(&extentionCount, &extentions);
-	for (unsigned int i = 0; i < extentionCount; i++) {
-		printf("%s\n", extentions[i]);
-	}
-	//createInfo.enabledExtensionCount = glfwExtensionCount;
-	//createInfo.ppEnabledExtensionNames = glfwExtensions;
+
+	createInfo.enabledExtensionCount = extentionCount;
+	createInfo.ppEnabledExtensionNames = extentions;
 
 	//enable validation layers
 	if (enableValidationLayers && CheckValidationLayerSupport()) {
