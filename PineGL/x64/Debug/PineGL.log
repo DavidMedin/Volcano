@@ -1,4 +1,7 @@
-﻿  source.c
-C:\Users\david\Documents\Github\PineGL\PineGL\src\source.c(36,22): warning C4018: '<': signed/unsigned mismatch
-C:\Users\david\Documents\Github\PineGL\PineGL\src\source.c(67,54): warning C4090: '=': different 'const' qualifiers
+﻿  instance.c
+C:\Users\david\Documents\Github\PineGL\PineGL\src\instance.c(29,54): warning C4090: '=': different 'const' qualifiers
+C:\Users\david\Documents\Github\PineGL\PineGL\src\instance.c(68,59): warning C4013: 'CheckValidationLayerSupport' undefined; assuming extern returning int
+C:\Users\david\Documents\Github\PineGL\PineGL\src\instance.c(77,18): warning C4013: 'CreateDebugInfo' undefined; assuming extern returning int
+C:\Users\david\Documents\Github\PineGL\PineGL\src\instance.c(88,26): warning C4013: 'CreateDebugMesseger' undefined; assuming extern returning int
+C:\Users\david\Documents\Github\PineGL\PineGL\src\instance.c(16): warning C4715: 'InitGLFW': not all control paths return a value
   PineGL.vcxproj -> C:\Users\david\Documents\Github\PineGL\x64\Debug\PineGL.exe

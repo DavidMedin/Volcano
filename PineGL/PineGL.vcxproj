@@ -19,7 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\devices.c" />
+    <ClCompile Include="src\instance.c" />
     <ClCompile Include="src\source.c" />
+    <ClCompile Include="src\validationLayers.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\devices.h" />
+    <ClInclude Include="src\globalVulkan.h" />
+    <ClInclude Include="src\instance.h" />
+    <ClInclude Include="src\validationLayers.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
