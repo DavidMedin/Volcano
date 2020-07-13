@@ -125,7 +125,27 @@ VkExtent2D Swap_GetBestSwapExtent(SwapChainSupportDetails* dets){
 	}
 }
 
-int CreateSwapChain(SwapChainSupportDetails* dets){
+int CreateSwapChain(SwapChainSupportDetails* dets,VkSurfaceKHR surface){
+	VkSurfaceFormatKHR* format = &(dets->formats[Swap_GetBestSurfaceFormat(dets)]);
+	VkPresentModeKHR* present = &(dets->presentModes[Swap_GetBestPresentMode(dets)]);
+	VkExtent2D extent = Swap_GetBestSwapExtent(dets);
+
+	unsigned int imageCount = dets->capabilities.minImageCount + 1;
+	//if maximage is 0, unlimited images; otherwise get the min of the two
+	if (dets->capabilities.maxImageCount > 0 && imageCount > dets->capabilities.maxImageCount) {
+		imageCount = dets->capabilities.maxImageCount;
+	}
+	VkSwapchainCreateInfoKHR swapInfo = { 0 };
+	swapInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	swapInfo.surface = surface;
+	swapInfo.minImageCount = imageCount;
+	swapInfo.imageFormat = format->format;
+	swapInfo.imageColorSpace = format->colorSpace;
+	swapInfo.imageExtent = extent;
+	swapInfo.imageArrayLayers = 1;
+	swapInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+
 }
 
 //inputs an instance and a physical device shell
