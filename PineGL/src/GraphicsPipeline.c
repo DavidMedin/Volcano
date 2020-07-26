@@ -33,7 +33,7 @@ VkShaderModule CreateShaderModule(VkDevice device,char* code,unsigned int codeSi
     return shader;
 }
 
-int CreateGraphicsPipeline(VkDevice device){
+int CreateGraphicsPipeline(VkDevice device,VkExtent2D viewExtent){
     //read the files
     char* fragmentCode;
     unsigned int fragmentSize=0;
@@ -54,6 +54,55 @@ int CreateGraphicsPipeline(VkDevice device){
         shaderStages[i].pName = "main";//this means we can define the entrypoint!!
         shaderStages[i].pSpecializationInfo = NULL;//defines constants so Vulkan can optimize the shader around them! Very cool.
     }
+    //describe the vertex input (like bindings and attributes)
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {0};
+    vertexInputInfo.sType =  VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexBindingDescriptionCount = 0;
+    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    //input assembly, triangles vs lines
+    VkPipelineInputAssemblyStateCreateInfo inputAssInfo = {0};
+    inputAssInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssInfo.primitiveRestartEnable = VK_FALSE;
+    //define the viewport and scissors(?)
+    VkPipelineViewportStateCreateInfo viewState = {0};
+    VkViewport viewport = {0};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float)viewExtent.width;
+    viewport.height = (float)viewExtent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    //scissors
+    VkRect2D scissor = {0};
+    scissor.extent = viewExtent;
+    VkOffset2D off = {0,0};
+    scissor.offset = off;
+    viewState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewState.viewportCount = 1;
+    viewState.pViewports = &viewport;
+    viewState.scissorCount = 1;
+    viewState.pScissors = &scissor;
+
+    //create the rasterizer
+    VkPipelineRasterizationStateCreateInfo rasterizer = {0};
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.depthClampEnable = VK_FALSE;//fragments outide of the near/far plane are clamped
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;//basically disables the rasterizer (no output)
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;//fill triangles with fragments
+    rasterizer.lineWidth = 1.0f;
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.depthBiasEnable = VK_FALSE;
+    rasterizer.depthBiasConstantFactor = 0.0f;
+    rasterizer.depthBiasClamp = 0.0f;
+    rasterizer.depthBiasSlopeFactor = 0.0f;//add depth offset basded on slope
+    //multisampling
+    VkPipelineMultisampleStateCreateInfo multisample = {0};
+    multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisample.sampleShadingEnable = VK_FALSE;
+    multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;//other members aren't touched, if enabling, we'll need to touch
+    
 
     for(unsigned int i = 0;i < 2;i++){
         vkDestroyShaderModule(device,shaderModules[i],NULL);
