@@ -19,7 +19,7 @@ typedef struct QueueFamilyIndex {
 }QueueFamilyIndex;
 
 //free formats and presentModes after use
-typedef struct SwapChainSupportDetails {
+typedef struct SwapChainSupportDetails { 
 	VkSurfaceCapabilitiesKHR capabilities;
 	VkSurfaceFormatKHR* formats;
 	unsigned int formatCount;
@@ -27,14 +27,31 @@ typedef struct SwapChainSupportDetails {
 	unsigned int presentCount;
 }SwapChainSupportDetails;
 
-typedef struct PhysicalDeviceDetails{
-	VkPhysicalDevice phyDev;
-	QueueFamilyIndex families;
-	SwapChainSupportDetails swapDetails;
-}PhysicalDeviceDetails;
+typedef struct SwapChain{
+	VkSwapchainKHR swapChain;
 
-int DeviceGetSwapChainDetails(VkPhysicalDevice device, VkSurfaceKHR surface, SwapChainSupportDetails* details);
-int HasRequiredQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface, QueueFamilyIndex* queueFamilies);
+	//indices into swapDets.formats and presentModes
+	SwapChainSupportDetails swapDets;
+	unsigned int chosenFormat;//use .format
+	unsigned int chosenPresent;
+	//images in the swapchain
+	unsigned int imageCount;//count for both images and imageViews
+	VkImage* images;//array of handles to VkImages
+	VkImageView* imageViews;
+}SwapChain;
+
+typedef struct DeviceDetails{
+	VkPhysicalDevice phyDev;
+	VkDevice device;
+	SwapChain swapChain;
+
+	VkQueue queues[2];//[0] = graphics, [1] = presentation
+	// unsigned int queueCount;
+	QueueFamilyIndex families;
+}DeviceDetails;
+
+int DeviceGetSwapChainDetails(VkPhysicalDevice phyDev,VkSurfaceKHR surface,SwapChainSupportDetails* swapDets);
+int HasRequiredQueueFamilies(VkPhysicalDevice phyDev,VkSurfaceKHR surface,QueueFamilyIndex* queueFamilies);
 int DeviceHasRequiredExtentions(VkPhysicalDevice device, char** requestedExtentions);
-int GetPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, VkPhysicalDevice* phyDevice, QueueFamilyIndex* queueFamilies);
-int CreateDevices(VkInstance instance, VkSurfaceKHR surface, VkPhysicalDevice* phyDevice, QueueFamilyIndex* queueFamilies, VkDevice* device);
+int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface, DeviceDetails* dets);
+int CreateDevices(VkInstance instance,VkSurfaceKHR surface,DeviceDetails* dets);

@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\devices.c" />
+    <ClCompile Include="src\GraphicsPipeline.c" />
     <ClCompile Include="src\instance.c" />
     <ClCompile Include="src\source.c" />
     <ClCompile Include="src\validationLayers.c" />
@@ -27,6 +28,7 @@
   <ItemGroup>
     <ClInclude Include="src\devices.h" />
     <ClInclude Include="src\globalVulkan.h" />
+    <ClInclude Include="src\GraphicsPipeline.h" />
     <ClInclude Include="src\instance.h" />
     <ClInclude Include="src\validationLayers.h" />
   </ItemGroup>
