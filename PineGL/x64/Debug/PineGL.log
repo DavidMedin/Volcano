@@ -1,4 +1,4 @@
-﻿  devices.c
-C:\Users\david\Documents\Github\PineGL\PineGL\src\devices.c(200,246): warning C4090: 'function': different 'const' qualifiers
-C:\Users\david\Documents\Github\PineGL\PineGL\src\devices.c(173): warning C4715: 'CreateSwapChain': not all control paths return a value
+﻿  GraphicsPipeline.c
+  commandpool.c
+  Generating Code...
   PineGL.vcxproj -> C:\Users\david\Documents\Github\PineGL\x64\Debug\PineGL.exe

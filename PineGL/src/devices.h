@@ -32,6 +32,7 @@ typedef struct SwapChain{
 
 	//indices into swapDets.formats and presentModes
 	SwapChainSupportDetails swapDets;
+	VkExtent2D swapExtent;
 	unsigned int chosenFormat;//use .format
 	unsigned int chosenPresent;
 	//images in the swapchain

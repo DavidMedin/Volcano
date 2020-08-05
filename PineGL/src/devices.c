@@ -218,8 +218,7 @@ int CreateSwapChain(DeviceDetails* phyDets,VkSurfaceKHR surface){
 		printf("Couldn't create image views!\n");
 		return 0;
 	}
-
-
+	phyDets->swapChain.swapExtent = extent;
 	return 1;
 }
 

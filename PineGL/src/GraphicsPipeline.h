@@ -4,4 +4,6 @@
 #include <vulkan/vulkan.h>
 
 int ReadTheFile(const char* path,char** buff,unsigned int* buffSize);
-int CreateGraphicsPipeline(VkDevice device);
+int CreateRenderPass(VkDevice device,VkSurfaceFormatKHR* format,VkRenderPass* renderPass);
+int CreateGraphicsPipeline(VkDevice device,VkRenderPass renderPass,VkExtent2D viewExtent,VkPipelineLayout* pipelineLayout,VkPipeline* graphicsPipeline);
+
