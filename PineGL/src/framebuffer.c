@@ -16,7 +16,7 @@ int CreateFramebuffers(VkDevice device,VkRenderPass renderPass,VkExtent2D swapEx
         frameInfo.layers = 1;
 
         if(vkCreateFramebuffer(device,&frameInfo,NULL,&((*framebuffers)[i])) != VK_SUCCESS){
-            printf("    framebuffer create failed\n");
+            Error("    framebuffer create failed\n");
             return 0;
         }
     }

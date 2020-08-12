@@ -1,6 +1,7 @@
 #pragma once
 #include "globalVulkan.h"
 #include "devices.h"
+#include "errorCatch.h"
 
 #include <vulkan/vulkan.h>
 

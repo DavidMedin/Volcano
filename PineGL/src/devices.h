@@ -1,6 +1,7 @@
 #pragma once
 #include "globalVulkan.h"
 #include "instance.h"
+#include "errorCatch.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -51,8 +52,4 @@ typedef struct DeviceDetails{
 	QueueFamilyIndex families;
 }DeviceDetails;
 
-int DeviceGetSwapChainDetails(VkPhysicalDevice phyDev,VkSurfaceKHR surface,SwapChainSupportDetails* swapDets);
-int HasRequiredQueueFamilies(VkPhysicalDevice phyDev,VkSurfaceKHR surface,QueueFamilyIndex* queueFamilies);
-int DeviceHasRequiredExtentions(VkPhysicalDevice device, char** requestedExtentions);
-int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface, DeviceDetails* dets);
 int CreateDevices(VkInstance instance,VkSurfaceKHR surface,DeviceDetails* dets);

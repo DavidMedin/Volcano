@@ -4,7 +4,7 @@ int ReadTheFile(const char* path,char** buff,unsigned int* buffSize){
     //init the file
     FILE* file = NULL;
     if(fopen_s(&file,path,"rb")){
-        printf("Couldn't open file! %s\n",path);
+        Error("Couldn't open file! %s\n",path);
         return 0;
     }
     //get the size of the file
@@ -62,7 +62,7 @@ int CreateRenderPass(VkDevice device,VkSurfaceFormatKHR* format,VkRenderPass* re
     renderInfo.pDependencies = &deps;//deps are like gates between subpasses that open when conditions are met
 
     if(vkCreateRenderPass(device,&renderInfo,NULL,renderPass) != VK_SUCCESS){
-        printf("    Renderpass failed\n");
+        Error("    Renderpass failed\n");
         return 0;
     }
 
@@ -77,7 +77,7 @@ VkShaderModule CreateShaderModule(VkDevice device,char* code,unsigned int codeSi
     shaderInfo.pCode = (uint32_t*)code;
     VkShaderModule shader;
     if(vkCreateShaderModule(device,&shaderInfo,NULL,&shader) != VK_SUCCESS){
-        printf("CreateShaderModule failed to create a shader!\n");
+        Error("CreateShaderModule failed to create a shader!\n");
         return NULL;
     }
     return shader;
@@ -98,7 +98,7 @@ int CreateGraphicsPipeline(VkDevice device,VkRenderPass renderPass,VkExtent2D vi
     //create the shader modules (giving vulkan the code?)
     VkShaderModule shaderModules[2] = {CreateShaderModule(device,fragmentCode,fragmentSize),CreateShaderModule(device,vertexCode,vertexSize)};
     if(shaderModules[0] == NULL || shaderModules[1] == NULL){
-        printf("one of the shader modules are bad\n");
+        Error("one of the shader modules are bad\n");
     }
     //assign the shader stage (vertexShaderMod to vertex shader stage)
     VkPipelineShaderStageCreateInfo shaderStages[2] = {0,0};
@@ -178,14 +178,14 @@ int CreateGraphicsPipeline(VkDevice device,VkRenderPass renderPass,VkExtent2D vi
     blendGlobal.attachmentCount = 1;
     blendGlobal.pAttachments = &blendAttach;
     //might need to add something if something breaks for blendGlobal...
-
+    //where uniforms reside
     //create the pipline layout
     VkPipelineLayoutCreateInfo layoutInfo = {0};
     layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     //a bunch of other info goes here later
 
     if(vkCreatePipelineLayout(device,&layoutInfo,NULL,pipelineLayout) != VK_SUCCESS){
-        printf("    PipelineLayout\n");
+        Error("    PipelineLayout\n");
         return 0;
     }
 
@@ -208,7 +208,7 @@ int CreateGraphicsPipeline(VkDevice device,VkRenderPass renderPass,VkExtent2D vi
     pipelineInfo.basePipelineIndex = -1;//we don't want to derive from another pipeline
 
     if(vkCreateGraphicsPipelines(device,VK_NULL_HANDLE,1,&pipelineInfo,NULL,graphicsPipeline) != VK_SUCCESS){
-        printf("    Graphics Pipeline create failed\n");
+        Error("    Graphics Pipeline create failed\n");
         return 0;
     }
 

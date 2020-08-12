@@ -5,7 +5,7 @@ int CreateCommandPool(VkDevice device,QueueFamilyIndex* indices,VkCommandPool* c
      poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
      poolInfo.queueFamilyIndex = indices->graphics;
      if(vkCreateCommandPool(device,&poolInfo,NULL,commandPool) != VK_SUCCESS){
-         printf("   command pool create failed\n");
+         Error("   command pool create failed\n");
          return 0;
      }
      return 1;
@@ -24,7 +24,7 @@ int CreateCommandBuffers(VkDevice device,VkCommandPool commandPool,unsigned int 
     allocInfo.commandBufferCount = cmdBufferCount;
 
     if(vkAllocateCommandBuffers(device,&allocInfo,*cmdBuffers) != VK_SUCCESS){
-        printf("    alloc command buffers create failed\n");
+        Error("    alloc command buffers create failed\n");
         return 0;
     }
     return 1;
@@ -32,7 +32,7 @@ int CreateCommandBuffers(VkDevice device,VkCommandPool commandPool,unsigned int 
 
 int FillCommandBuffers(VkExtent2D swapChainExtent,VkFramebuffer* framebuffers,unsigned int framebufferCount,VkPipeline graphicsPipeline,VkRenderPass renderPass,unsigned int cmdbufferCount,VkCommandBuffer* cmdbuffers){
     if(framebufferCount != cmdbufferCount){
-        printf("not an equal number of framebuffers and commandbuffers\n");
+        Error("not an equal number of framebuffers and commandbuffers\n");
         return 0;
     }
     for(unsigned int i =0;i < cmdbufferCount;i++){
@@ -40,7 +40,7 @@ int FillCommandBuffers(VkExtent2D swapChainExtent,VkFramebuffer* framebuffers,un
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         //begin recording this command buffer
         if(vkBeginCommandBuffer(cmdbuffers[i],&beginInfo) != VK_SUCCESS){
-            printf("    begin command buffer : %d failed\n",i);
+            Error("    begin command buffer : %d failed\n",i);
             return 0;
         }
         //the only commmands we need to record/do is to start the render pass
@@ -62,7 +62,7 @@ int FillCommandBuffers(VkExtent2D swapChainExtent,VkFramebuffer* framebuffers,un
         //end the cmd recording
         vkCmdEndRenderPass(cmdbuffers[i]);
         if(vkEndCommandBuffer(cmdbuffers[i]) != VK_SUCCESS){
-            printf("end command buffer : %d failed\n",i);
+            Error("end command buffer : %d failed\n",i);
             return 0;
         }
     }
@@ -74,7 +74,7 @@ int CreateSemaphore(VkDevice device, VkSemaphore* semaphore){
     VkSemaphoreCreateInfo semaphoreInfo = {0};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     if(vkCreateSemaphore(device,&semaphoreInfo,NULL,semaphore) != VK_SUCCESS){
-        printf("    semaphore create failed\n");
+        Error("    semaphore create failed\n");
         return 0;
     }
     return 1;
@@ -85,7 +85,7 @@ int CreateFence(VkDevice device,VkFence* fence){
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     if(vkCreateFence(device,&fenceInfo,NULL,fence) != VK_SUCCESS){
-        printf("    fence create failed\n");
+        Error("    fence create failed\n");
         return 0;
     }
     return 1;

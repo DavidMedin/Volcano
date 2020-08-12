@@ -81,10 +81,10 @@ int DeviceHasRequiredExtentions(VkPhysicalDevice device,char** requestedExtentio
 			}
 		}
 		if (!found) {
-			printf("Physical Device doesn't have extension: %s\n", requestedExtentions[j]);
-			printf("Physical Device only has these extentions!\n");
+			Error("Physical Device doesn't have extension: %s\n", requestedExtentions[j]);
+			Error("Physical Device only has these extentions!\n");
 			for (unsigned int q = 0; q < extentionCount; q++) {
-				printf("	%s\n", extentionProps[q].extensionName);
+				Error("	%s\n", extentionProps[q].extensionName);
 			}
 			free(extentionProps);//failed to find an extension
 			return 0;
@@ -101,7 +101,7 @@ unsigned int Swap_GetBestSurfaceFormat(SwapChainSupportDetails* dets){
 			return i;
 		}
 	}
-	printf("the ideal colorspace wasn't provided in formats!\n");
+	Error("the ideal colorspace wasn't provided in formats!\n");
 	return 0;
 }
 
@@ -111,7 +111,7 @@ unsigned int Swap_GetBestPresentMode(SwapChainSupportDetails* dets){
 			return i;
 		}
 	}
-	printf("no triple buffer present mode, falling back to double buffer");
+	Error("no triple buffer present mode, falling back to double buffer");
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
@@ -150,26 +150,27 @@ int CreateImageViews(VkDevice device,unsigned int imageCount,VkImage* images,VkS
 			imageInfo.subresourceRange.baseArrayLayer = 0;
 			imageInfo.subresourceRange.layerCount = 1;
 			if(vkCreateImageView(device,&imageInfo,NULL,&(*imageViews)[i])!= VK_SUCCESS){
-				printf("Couldn't create a imageView!\n");
+				Error("Couldn't create a imageView!\n");
 				return 0;
 			}
 		}
 	}else{
-		printf("CreateImageViews was given 0 as an imageCount! that is wrong.\n");
+		Error("CreateImageViews was given 0 as an imageCount! that is wrong.\n");
 		return 0;
 	}
+	return 1;
 }
-int CreateSwapChain(DeviceDetails* phyDets,VkSurfaceKHR surface){
-	phyDets->swapChain.chosenFormat = Swap_GetBestSurfaceFormat(&phyDets->swapChain.swapDets);
-	phyDets->swapChain.chosenPresent = Swap_GetBestPresentMode(&phyDets->swapChain.swapDets);
-	VkSurfaceFormatKHR* format = &(phyDets->swapChain.swapDets.formats[phyDets->swapChain.chosenFormat]);
-	VkPresentModeKHR present = phyDets->swapChain.swapDets.presentModes[phyDets->swapChain.chosenPresent];
-	VkExtent2D extent = Swap_GetBestSwapExtent(&phyDets->swapChain.swapDets);
+int CreateSwapChain(VkDevice device,QueueFamilyIndex* families,VkSurfaceKHR surface, SwapChain* swapChain){
+	swapChain->chosenFormat = Swap_GetBestSurfaceFormat(&swapChain->swapDets);
+	swapChain->chosenPresent = Swap_GetBestPresentMode(&swapChain->swapDets);
+	VkSurfaceFormatKHR* format = &(swapChain->swapDets.formats[swapChain->chosenFormat]);
+	VkPresentModeKHR present = swapChain->swapDets.presentModes[swapChain->chosenPresent];
+	VkExtent2D extent = Swap_GetBestSwapExtent(&swapChain->swapDets);
 
-	unsigned int imageCount = phyDets->swapChain.swapDets.capabilities.minImageCount + 1;
+	unsigned int imageCount = swapChain->swapDets.capabilities.minImageCount + 1;
 	//if maximage is 0, unlimited images; otherwise get the min of the two
-	if (phyDets->swapChain.swapDets.capabilities.maxImageCount > 0 && imageCount > phyDets->swapChain.swapDets.capabilities.maxImageCount) {
-		imageCount = phyDets->swapChain.swapDets.capabilities.maxImageCount;
+	if (swapChain->swapDets.capabilities.maxImageCount > 0 && imageCount > swapChain->swapDets.capabilities.maxImageCount) {
+		imageCount = swapChain->swapDets.capabilities.maxImageCount;
 	}
 	VkSwapchainCreateInfoKHR swapInfo = { 0 };
 	swapInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -182,18 +183,18 @@ int CreateSwapChain(DeviceDetails* phyDets,VkSurfaceKHR surface){
 	swapInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 	//taking the availability of .graphics and .presentation for granted
-	if(phyDets->families.presentation == phyDets->families.graphics){
+		if(families->presentation == families->graphics){
 		swapInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;//only one family can push to the swapchain
 		swapInfo.queueFamilyIndexCount = 0;
 		swapInfo.pQueueFamilyIndices = NULL;
 	}else{
 		swapInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;//more than one can push, need to juggle permissions tho
 		swapInfo.queueFamilyIndexCount = 2;
-		unsigned int indices[] = {phyDets->families.graphics,phyDets->families.presentation};
+		unsigned int indices[] = {families->graphics,families->presentation};
 		swapInfo.pQueueFamilyIndices = indices;
 	}
 
-	swapInfo.preTransform = phyDets->swapChain.swapDets.capabilities.currentTransform; // no applied transform
+	swapInfo.preTransform = swapChain->swapDets.capabilities.currentTransform; // no applied transform
 	swapInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; //no alpha blending with other windows
 
 	swapInfo.presentMode = present;
@@ -201,43 +202,43 @@ int CreateSwapChain(DeviceDetails* phyDets,VkSurfaceKHR surface){
 
 	swapInfo.oldSwapchain = VK_NULL_HANDLE;//for when we need to change the swapchain (like when we need to resize the window)
 
-	if(vkCreateSwapchainKHR(phyDets->device,&swapInfo,NULL,&phyDets->swapChain.swapChain) != VK_SUCCESS){
-		printf("couldn't create a swap chain! oh no boo hoo.\n");
+	if(vkCreateSwapchainKHR(device,&swapInfo,NULL,&swapChain->swapChain) != VK_SUCCESS){
+		Error("couldn't create a swap chain! oh no boo hoo.\n");
 		return 0;
 	}
 	//get the VkImages
-	phyDets->swapChain.imageCount = 0;
-	vkGetSwapchainImagesKHR(phyDets->device,phyDets->swapChain.swapChain,&phyDets->swapChain.imageCount,NULL);
-	phyDets->swapChain.images = malloc(sizeof(VkImage)*phyDets->swapChain.imageCount);
-	vkGetSwapchainImagesKHR(phyDets->device,phyDets->swapChain.swapChain,&phyDets->swapChain.imageCount,phyDets->swapChain.images);
-	if(phyDets->swapChain.imageCount == 0){
-		printf("the swap chain has zero images!\n");
+	swapChain->imageCount = 0;
+	vkGetSwapchainImagesKHR(device,swapChain->swapChain,&swapChain->imageCount,NULL);
+	swapChain->images = malloc(sizeof(VkImage)*swapChain->imageCount);
+	vkGetSwapchainImagesKHR(device,swapChain->swapChain,&swapChain->imageCount,swapChain->images);
+	if(swapChain->imageCount == 0){
+		Error("the swap chain has zero images!\n");
 	}
 
-	if(!CreateImageViews(phyDets->device,phyDets->swapChain.imageCount,phyDets->swapChain.images,&phyDets->swapChain.swapDets.formats[phyDets->swapChain.chosenFormat],&phyDets->swapChain.imageViews)){
-		printf("Couldn't create image views!\n");
+	if(!CreateImageViews(device,swapChain->imageCount,swapChain->images,&swapChain->swapDets.formats[swapChain->chosenFormat],&swapChain->imageViews)){
+		Error("Couldn't create image views!\n");
 		return 0;
 	}
-	phyDets->swapChain.swapExtent = extent;
+	swapChain->swapExtent = extent;
 	return 1;
 }
 
 
 //inputs an instance and a physical device shell
 //returns a physical device thru that shell and queue family info on that device
-int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface, DeviceDetails* dets) { // graphics card for example
+int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,QueueFamilyIndex* families, SwapChainSupportDetails* dets,VkPhysicalDevice* phyDev) { // graphics card for example
 	unsigned int deviceCount = 0;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, NULL);//query the num of devices found
 	if (deviceCount == 0) {
-		printf("No devices found, you poor dood!\n");
+		Error("No devices found, you poor dood!\n");
 		return 0;
 	}
 	//a pointer to an array of device pointers
 	VkPhysicalDevice* deviceList = malloc(sizeof(VkPhysicalDevice) * deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, deviceList);
 	//pick out the best device
-	dets->swapChain.swapDets.formats = NULL;
-	dets->swapChain.swapDets.presentModes = NULL;
+	dets->formats = NULL;
+	dets->presentModes = NULL;
 	for (unsigned int i = 0; i < deviceCount; i++) {
 		VkPhysicalDeviceProperties props;
 		vkGetPhysicalDeviceProperties(deviceList[i], &props);
@@ -248,18 +249,18 @@ int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface, DeviceDetails* d
 			//has the requested queue families (graphics, presentation, etc.)
 			//the device has available extentions (like for surfaces)
 			//the swap chain has an available format and present mode
-		if (props.apiVersion >= VK_API_VERSION_1_2 && props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && HasRequiredQueueFamilies(deviceList[i],surface, &(dets->families)) && DeviceHasRequiredExtentions(deviceList[i], (char**)requiredDeviceExtensions) && DeviceGetSwapChainDetails(deviceList[i], surface, &dets->swapChain.swapDets)) {//conditions device must pass
+		if (props.apiVersion >= VK_API_VERSION_1_2 && props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && HasRequiredQueueFamilies(deviceList[i],surface, families) && DeviceHasRequiredExtentions(deviceList[i], (char**)requiredDeviceExtensions) && DeviceGetSwapChainDetails(deviceList[i], surface, dets)) {//conditions device must pass
 			//found it!
-			dets->phyDev = deviceList[i];
+			*phyDev = deviceList[i];
 			break;
 		}
 		else {
-			if (dets->swapChain.swapDets.formats != NULL) free(dets->swapChain.swapDets.formats);
-			if (dets->swapChain.swapDets.presentModes != NULL) free(dets->swapChain.swapDets.presentModes);
+			if (dets->formats != NULL) free(dets->formats);
+			if (dets->presentModes != NULL) free(dets->presentModes);
 		}
 	}
-	if (dets->phyDev == NULL) {
-		printf("There are no devices that match our requirements!\n");
+	if (phyDev == NULL) {
+		Error("There are no devices that match our requirements!\n");
 		return 0;
 	}
 	return 1;
@@ -270,8 +271,7 @@ int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface, DeviceDetails* d
 //create the device
 //input instance,input surface,output phyDevice,output families, output device
 int CreateDevices(VkInstance instance,VkSurfaceKHR surface,DeviceDetails* dets) {
-	if (!GetPhysicalDevice(instance,surface,dets)) {
-		printf("Couldn't create a device!\n");
+	if (!GetPhysicalDevice(instance,surface,&(dets->families),&(dets->swapChain.swapDets),&(dets->phyDev))) {
 		return 0;
 	}
 	//Creating a graphics logical device-------------------------------------
@@ -321,12 +321,11 @@ int CreateDevices(VkInstance instance,VkSurfaceKHR surface,DeviceDetails* dets) 
 	deviceInfo.flags = 0;
 	deviceInfo.pNext = NULL;
 	if (vkCreateDevice(dets->phyDev, &deviceInfo, NULL, &(dets->device)) != VK_SUCCESS) {
-		printf("Couldn't create a logical device. oh no\n");
+		Error("Couldn't create a logical device. oh no\n");
 	}
 
 	//create the swapchain for the device
-	if(!CreateSwapChain(dets,surface)){
-		printf("Couldn't create a swapchain!\n");
+	if(!CreateSwapChain(dets->device,&(dets->families),surface,&(dets->swapChain))){
 		return 0;
 	}	
 

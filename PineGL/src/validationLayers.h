@@ -8,6 +8,7 @@
 #include "GLFW/glfw3.h"
 
 //our stuff
+#include "errorCatch.h"
 #include "globalVulkan.h"
 #include "instance.h"
 

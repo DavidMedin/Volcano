@@ -21,20 +21,25 @@
   <ItemGroup>
     <ClCompile Include="src\commandpool.c" />
     <ClCompile Include="src\devices.c" />
+    <ClCompile Include="src\errorCatch.c" />
     <ClCompile Include="src\framebuffer.c" />
     <ClCompile Include="src\GraphicsPipeline.c" />
     <ClCompile Include="src\instance.c" />
     <ClCompile Include="src\source.c" />
     <ClCompile Include="src\validationLayers.c" />
+    <ClCompile Include="src\window.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\commandpool.h" />
     <ClInclude Include="src\devices.h" />
+    <ClInclude Include="src\errorCatch.h" />
     <ClInclude Include="src\framebuffer.h" />
     <ClInclude Include="src\globalVulkan.h" />
     <ClInclude Include="src\GraphicsPipeline.h" />
     <ClInclude Include="src\instance.h" />
+    <ClInclude Include="src\source.h" />
     <ClInclude Include="src\validationLayers.h" />
+    <ClInclude Include="src\window.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
