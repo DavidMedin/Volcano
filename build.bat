@@ -1,3 +1,3 @@
 VsDevCmd.bat
-msbuild PineGL.sln
-start x64/Debug/PineGL.exe
+msbuild Volcano.sln
+start x64/Debug/Volcano.exe
