@@ -1,8 +1,18 @@
 #include "source.h"
+/*
+notes for future david:
 
-Window window;
+window struct shouldn't contain a device, but a swapchain from a device.
+each swapchain should be initialized with a shader, and the swapchain should contain pointers to arrays of shader-draw-commandbuffers/shaders (maybe a struct?).
+also init swapchain in createwindow pleeeeas
+*/
+
+
+
 Instance instance;
-
+DeviceDetails device;
+Window window;
+Window secondWindow;
 /*
 typedef struct device{
 	VkCommandPool graphicsPool
@@ -66,31 +76,31 @@ unsigned int nextFrame = 0;
 
 void Shutdown() {
 	for(unsigned int i = 0;i < semaphoreCount;i++){
-		vkDestroySemaphore(window->devDets.device,imageDrawReady[i],NULL);
-		vkDestroySemaphore(window->devDets.device,imagePrezReady[i],NULL);
-		vkDestroyFence(window->devDets.device,inFlightFences[i],NULL);
+		vkDestroySemaphore(device.device,imageDrawReady[i],NULL);
+		vkDestroySemaphore(device.device,imagePrezReady[i],NULL);
+		vkDestroyFence(device.device,inFlightFences[i],NULL);
 	}
 
-	vkDestroyCommandPool(window->devDets.device,commandPool,NULL);
+	vkDestroyCommandPool(device.device,commandPool,NULL);
 
 	for(unsigned int i = 0;i < framebufferCount;i++){
-		vkDestroyFramebuffer(window->devDets.device,framebuffers[i],NULL);
+		vkDestroyFramebuffer(device.device,framebuffers[i],NULL);
 	}
 
-	vkDestroyPipeline(window->devDets.device,graphicsPipeline,NULL);
-	vkDestroyPipelineLayout(window->devDets.device,pipelineLayout,NULL);
-	vkDestroyRenderPass(window->devDets.device,renderPass,NULL);
+	vkDestroyPipeline(device.device,graphicsPipeline,NULL);
+	vkDestroyPipelineLayout(device.device,pipelineLayout,NULL);
+	vkDestroyRenderPass(device.device,renderPass,NULL);
 
 
 
-	 DestoryWindow(instance,window);
-	//for(unsigned int i = 0; i < window->devDets.swapChain.imageCount;i++){
-	//	vkDestroyImageView(window->devDets.device,window->devDets.swapChain.imageViews[i],NULL);
+	 DestoryWindow(instance,device,window);
+	//for(unsigned int i = 0; i < window->swapchain.imageCount;i++){
+	//	vkDestroyImageView(device.device,window->swapchain.imageViews[i],NULL);
 	//}
-	//vkDestroySwapchainKHR(window->devDets.device,window->devDets.swapChain.swapChain,NULL);
+	//vkDestroySwapchainKHR(device.device,window->swapchain.swapChain,NULL);
 
 
-	//vkDestroyDevice(window->devDets.device, NULL);
+	//vkDestroyDevice(device.device, NULL);
 	//vkDestroySurfaceKHR(instance->instance, window->surface, NULL);
 
 	 DestoryInstance(instance);
@@ -105,16 +115,16 @@ void Shutdown() {
 
 
 void DrawFrame(){
-	vkWaitForFences(window->devDets.device,1,&inFlightFences[nextFrame],VK_TRUE,UINT64_MAX);
+	vkWaitForFences(device.device,1,&inFlightFences[nextFrame],VK_TRUE,UINT64_MAX);
 	//get an avaiable image from the swap chain
 	unsigned int imageIndex;
-	vkAcquireNextImageKHR(window->devDets.device,window->devDets.swapChain.swapChain,UINT64_MAX,imageDrawReady[nextFrame],VK_NULL_HANDLE,&imageIndex);
+	vkAcquireNextImageKHR(device.device,window->swapchain.swapChain,UINT64_MAX,imageDrawReady[nextFrame],VK_NULL_HANDLE,&imageIndex);
 
-	vkResetFences(window->devDets.device,1,&inFlightFences[nextFrame]);
+	vkResetFences(device.device,1,&inFlightFences[nextFrame]);
 	//makes sure we arn't drawing to the same image
 	if(swapImageFence[imageIndex] != VK_NULL_HANDLE){
 		//the swapchain is being drawn too. wait
-		vkWaitForFences(window->devDets.device,1,&swapImageFence[imageIndex],VK_TRUE,UINT64_MAX);
+		vkWaitForFences(device.device,1,&swapImageFence[imageIndex],VK_TRUE,UINT64_MAX);
 	}//we good to go now
 	swapImageFence[imageIndex] = inFlightFences[nextFrame];
 
@@ -129,7 +139,7 @@ void DrawFrame(){
 	submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &imagePrezReady[nextFrame];
-	if(vkQueueSubmit(window->devDets.queues[0],1,&submitInfo,inFlightFences[nextFrame]) != VK_SUCCESS){
+	if(vkQueueSubmit(device.queues[0],1,&submitInfo,inFlightFences[nextFrame]) != VK_SUCCESS){
 		printf("couldn't send command buffer to graphics queue\n");
 		return;
 	}
@@ -139,10 +149,10 @@ void DrawFrame(){
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = &imagePrezReady[nextFrame];
 	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = &window->devDets.swapChain.swapChain;
+	presentInfo.pSwapchains = &window->swapchain.swapChain;
 	presentInfo.pImageIndices = &imageIndex;
-	vkQueuePresentKHR(window->devDets.queues[1],&presentInfo);
-	vkDeviceWaitIdle(window->devDets.device);//do we need this?
+	vkQueuePresentKHR(device.queues[1],&presentInfo);
+	vkDeviceWaitIdle(device.device);//do we need this?
 
 	nextFrame = (nextFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -157,41 +167,42 @@ int main() {
 	// 	printf("Panic! Glfw didn't initialize!\n");
 	// }
 	//create vulkan instance
-	CreateWindow("TestWindow",&instance,&window);
+	// if (!CreateDevices(instance->instance,window->surface,&(device))) {
+	// 	printf("Couldn't create devices!\n");
+	// }
+	CreateWindow("TestWindow",&instance,&device,&window);
+	CreateWindow("SecondWindow",&instance,&device,&secondWindow);
 
 
 	//find the best device (GPU in this case) and return a virtual device, physical device, and the queue families available  for that device
-	if (!CreateDevices(instance->instance,window->surface,&(window->devDets))) {
-		printf("Couldn't create devices!\n");
-	}
 	//left this out of create devices to make it more dynamic
 	//create the queues for the device (graphics calls and presentation calls)
-	vkGetDeviceQueue(window->devDets.device, window->devDets.families.graphics, 0, &(window->devDets.queues[0]));//3rd argument is the 0th queue of the queue family
-	vkGetDeviceQueue(window->devDets.device, window->devDets.families.presentation, 0, &(window->devDets.queues[1]));
+	vkGetDeviceQueue(device.device, device.families.graphics, 0, &(device.queues[0]));//3rd argument is the 0th queue of the queue family
+	vkGetDeviceQueue(device.device, device.families.presentation, 0, &(device.queues[1]));
 
-	if(!CreateRenderPass(window->devDets.device,&window->devDets.swapChain.swapDets.formats[window->devDets.swapChain.chosenFormat],&renderPass)){
+	if(!CreateRenderPass(device.device,&window->swapchain.swapDets->formats[window->swapchain.chosenFormat],&renderPass)){
 		printf("couldn't create render pass\n");
 	}
-	if(!CreateGraphicsPipeline(window->devDets.device,renderPass,window->devDets.swapChain.swapExtent,&pipelineLayout,&graphicsPipeline)){
+	if(!CreateGraphicsPipeline(device.device,renderPass,window->swapchain.swapExtent,&pipelineLayout,&graphicsPipeline)){
 		printf("Couldn't create graphics pipeline");
 	}
 
 	//create framebuffers
-	if(!CreateFramebuffers(window->devDets.device,renderPass,window->devDets.swapChain.swapExtent,window->devDets.swapChain.imageViews,window->devDets.swapChain.imageCount,&framebuffers,&framebufferCount)){
+	if(!CreateFramebuffers(device.device,renderPass,window->swapchain.swapExtent,window->swapchain.imageViews,window->swapchain.imageCount,&framebuffers,&framebufferCount)){
 		printf("Couldn't create Framebuffer!\n");
 	}
 
 	//create a command pool (stores the command buffers more efficently)
-	if(!CreateCommandPool(window->devDets.device,&(window->devDets.families),&commandPool)){
+	if(!CreateCommandPool(device.device,&(device.families),&commandPool)){
 		printf("Couldn't create commandPool\n");
 	}
 	//allocate mem for command buffers
-	if(!CreateCommandBuffers(window->devDets.device,commandPool,framebufferCount,&commandBuffers)){
+	if(!CreateCommandBuffers(device.device,commandPool,framebufferCount,&commandBuffers)){
 		printf("Couldn't allocate memory for command buffers!\n");
 	}
 	//fill the command buffers
 	commandBufferCount = framebufferCount;
-	if(!FillCommandBuffers(window->devDets.swapChain.swapExtent,framebuffers,framebufferCount,graphicsPipeline,renderPass,commandBufferCount,commandBuffers)){
+	if(!FillCommandBuffers(window->swapchain.swapExtent,framebuffers,framebufferCount,graphicsPipeline,renderPass,commandBufferCount,commandBuffers)){
 		printf("Couldn't fill the command buffers\n");
 	}
 
@@ -199,19 +210,19 @@ int main() {
 	for(unsigned int u = 0;u < 2;u++){
 		*(semass[u]) = malloc(sizeof(VkFence*)*semaphoreCount);
 		for(unsigned int i = 0;i < semaphoreCount;i++){
-			if(!CreateSemaphore(window->devDets.device,&((*semass[u])[i]))){
+			if(!CreateSemaphore(device.device,&((*semass[u])[i]))){
 				printf("Could't create a semaphore! : %d : %d \n",i,u);
 			}
 		}
 	}
 	inFlightFences = malloc(sizeof(VkFence*) * semaphoreCount);
 	for(unsigned int i = 0;i < semaphoreCount;i++){
-		if(!CreateFence(window->devDets.device,&inFlightFences[i])){
+		if(!CreateFence(device.device,&inFlightFences[i])){
 			printf("Couldn't create a fence! : %d\n",i);
 		}
 	}
-	swapImageFence = malloc(sizeof(VkFence*)*window->devDets.swapChain.imageCount);
-	for(unsigned int i = 0;i < window->devDets.swapChain.imageCount;i++){
+	swapImageFence = malloc(sizeof(VkFence*)*window->swapchain.imageCount);
+	for(unsigned int i = 0;i < window->swapchain.imageCount;i++){
 		swapImageFence[i] = VK_NULL_HANDLE;
 	}
 
@@ -220,7 +231,7 @@ int main() {
 		glfwPollEvents();
 		DrawFrame();
 	}
-	vkDeviceWaitIdle(window->devDets.device);//finish everything it is doing so the semaphores are no longer in use
+	vkDeviceWaitIdle(device.device);//finish everything it is doing so the semaphores are no longer in use
 	Shutdown();
 	return 0;
 }

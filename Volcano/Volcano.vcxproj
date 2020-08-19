@@ -26,6 +26,7 @@
     <ClCompile Include="src\GraphicsPipeline.c" />
     <ClCompile Include="src\instance.c" />
     <ClCompile Include="src\source.c" />
+    <ClCompile Include="src\swapchain.c" />
     <ClCompile Include="src\validationLayers.c" />
     <ClCompile Include="src\window.c" />
   </ItemGroup>
@@ -38,6 +39,7 @@
     <ClInclude Include="src\GraphicsPipeline.h" />
     <ClInclude Include="src\instance.h" />
     <ClInclude Include="src\source.h" />
+    <ClInclude Include="src\swapchain.h" />
     <ClInclude Include="src\validationLayers.h" />
     <ClInclude Include="src\window.h" />
   </ItemGroup>

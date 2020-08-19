@@ -12,7 +12,7 @@ const char** GetInstanceValidationLayers(unsigned int* count) {
 }
 
 
-void CreateInstance(const char* appName,Instance* instance){
+void CreateInstance(Instance* instance){
 	*instance = malloc(sizeof(struct Instance));
 	InstantiateInstance(&((*instance)->instance),&((*instance)->debugMessenger));
 }
@@ -52,7 +52,7 @@ void InstantiateInstance(VkInstance* instance, VkDebugUtilsMessengerEXT* debugMe
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "TestWindow";
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.pEngineName = "PineGL";
+	appInfo.pEngineName = "Volcano";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_2;
 	appInfo.pNext = NULL;

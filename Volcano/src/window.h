@@ -6,17 +6,18 @@
 #include "GLFW/glfw3.h"
 
 #include "globalVulkan.h"
-#include "devices.h"
 #include "instance.h"
 #include "errorCatch.h"
+#include "swapchain.h"
 
 typedef struct Window{
 	GLFWwindow* window;
     VkSurfaceKHR surface;
-	DeviceDetails devDets;
+	SwapChain swapchain;
+	// DeviceDetails devDets;
 }*Window;
 int InitGLFW();
 void DestroyGLFW();
-void CreateWindow(const char* windowName,Instance* instance,Window* pWindow);
-void DestoryWindow(Instance instance, Window window);
+void CreateWindow(const char* windowName,Instance* instance,DeviceDetails* device, Window* pWindow);
+void DestoryWindow(Instance instance,DeviceDetails device, Window window);
 //void shutdownwindow

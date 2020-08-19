@@ -28,28 +28,17 @@ typedef struct SwapChainSupportDetails {
 	unsigned int presentCount;
 }SwapChainSupportDetails;
 
-typedef struct SwapChain{
-	VkSwapchainKHR swapChain;
-
-	//indices into swapDets.formats and presentModes
-	SwapChainSupportDetails swapDets;
-	VkExtent2D swapExtent;
-	unsigned int chosenFormat;//use .format
-	unsigned int chosenPresent;
-	//images in the swapchain
-	unsigned int imageCount;//count for both images and imageViews
-	VkImage* images;//array of handles to VkImages
-	VkImageView* imageViews;
-}SwapChain;
-
 typedef struct DeviceDetails{
 	VkPhysicalDevice phyDev;
+	VkPhysicalDeviceProperties phyProps;
+
 	VkDevice device;
-	SwapChain swapChain;
+	SwapChainSupportDetails swapSupport;
 
 	VkQueue queues[2];//[0] = graphics, [1] = presentation
 	// unsigned int queueCount;
 	QueueFamilyIndex families;
 }DeviceDetails;
 
-int CreateDevices(VkInstance instance,VkSurfaceKHR surface,DeviceDetails* dets);
+int CreateDevices(VkInstance instance,VkSurfaceKHR surface, DeviceDetails* dets);
+int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,DeviceDetails* devDets);

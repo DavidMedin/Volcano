@@ -5,14 +5,15 @@
 #include "errorCatch.h"
 #include "globalVulkan.h"
 #include "validationLayers.h"
+#include "devices.h"
 typedef struct Instance{
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
 }*Instance;
 
 //init glfw
-
-void CreateInstance(const char* appName, Instance* instance);
+// void StartVulkan(Instance* instance,DeviceDetails* device);
+void CreateInstance(Instance* instance);
 void DestoryInstance(Instance instance);
 
 //not used outside of instance.c

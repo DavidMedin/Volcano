@@ -1,7 +1,7 @@
 #include "window.h"
 
 int doneInit = 0;
-
+int vulkanInit = 0;
 int InitGLFW() {
     if(!doneInit){
         if (!glfwInit()) {
@@ -21,26 +21,56 @@ void DestroyGLFW(){
         doneInit = 0;
     }
 }
+/*--first time input:
+    uninitialized instance
+    uninitialized device
+    uninitialized window
+--fist time Output:
+    instance
+    device
+    pWindow
+--not first time Input:
+    windowName
+    device
+    instance
+    uninitialized window
+--not first time output:
+    pwindow
+*/
+void CreateWindow(const char* windowName,Instance* instance,DeviceDetails* device, Window* pWindow){
+	//once
+    if(!vulkanInit)
+        if(!InitGLFW()) return;
 
-void CreateWindow(const char* windowName,Instance* instance, Window* pWindow){
-	if(!InitGLFW()) return;
 	*pWindow = malloc(sizeof(struct Window));
     (*pWindow)->window = glfwCreateWindow(WIDTH,HEIGHT,windowName,NULL,NULL);
-    //create the instance
-    CreateInstance(windowName,instance);
-	if (glfwCreateWindowSurface((*instance)->instance, (*pWindow)->window, NULL, &((*pWindow)->surface))!=VK_SUCCESS) {
+
+    //once
+    if(!vulkanInit)
+        CreateInstance(instance);
+	
+    
+    if (glfwCreateWindowSurface((*instance)->instance, (*pWindow)->window, NULL, &((*pWindow)->surface))!=VK_SUCCESS) {
 		Error("Couldn't create a surface!\n");
 	}
+    if(!vulkanInit)
+        CreateDevices((*instance)->instance,(*pWindow)->surface,device);
+    else
+        if(!IsDeviceCompatible(device->phyDev,(*pWindow)->surface,device->phyProps,device)){
+            Error("This surface doesn't comply with the picked device. wack\n");
+        }
+    CreateSwapChain(device,(*pWindow)->surface,&(*pWindow)->swapchain);
+    vulkanInit = 1;
 }
 
-void DestoryWindow(Instance instance, Window window){
+void DestoryWindow(Instance instance,DeviceDetails device, Window window){
 
     //destory everything in DeviceDetails
-    for(unsigned int i = 0;i < window->devDets.swapChain.imageCount;i++){
-        vkDestroyImageView(window->devDets.device,window->devDets.swapChain.imageViews[i],NULL);
+    for(unsigned int i = 0;i < window->swapchain.imageCount;i++){
+        vkDestroyImageView(device.device,window->swapchain.imageViews[i],NULL);
     }
-	vkDestroySwapchainKHR(window->devDets.device,window->devDets.swapChain.swapChain,NULL);
-    vkDestroyDevice(window->devDets.device,NULL);
+	vkDestroySwapchainKHR(device.device,window->swapchain.swapChain,NULL);
+    vkDestroyDevice(device.device,NULL);
     //destroy VkSurfaceKHR
     vkDestroySurfaceKHR(instance->instance,window->surface,NULL);
     //destroy GLFWwindow
