@@ -21,6 +21,13 @@
             },
             // Use the standard MS compiler pattern to detect errors, warnings and infos
             "problemMatcher": "$msCompile",
+            "dependsOn":"premake"
+        },
+        {
+            "label": "premake",
+            "type": "shell",
+            "command": "premake5.exe",
+            "args": ["vs2019"]
         }
     ]
 }

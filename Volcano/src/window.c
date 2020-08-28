@@ -37,7 +37,7 @@ void DestroyGLFW(){
 --not first time output:
     pwindow
 */
-void CreateWindow(const char* windowName,Instance* instance,DeviceDetails* device, Window* pWindow){
+void CreateWindow(const char* windowName,Instance* instance,Device* device, Window* pWindow, VkRenderPass* renderpass){
 	//once
     if(!vulkanInit)
         if(!InitGLFW()) return;
@@ -63,13 +63,13 @@ void CreateWindow(const char* windowName,Instance* instance,DeviceDetails* devic
     vulkanInit = 1;
 }
 
-void DestoryWindow(Instance instance,DeviceDetails device, Window window){
+void DestoryWindow(Instance instance,Device device, Window window){
 
     //destory everything in DeviceDetails
-    for(unsigned int i = 0;i < window->swapchain.imageCount;i++){
-        vkDestroyImageView(device.device,window->swapchain.imageViews[i],NULL);
+    for(unsigned int i = 0;i < window->swapchain->imageCount;i++){
+        vkDestroyImageView(device.device,window->swapchain->imageViews[i],NULL);
     }
-	vkDestroySwapchainKHR(device.device,window->swapchain.swapChain,NULL);
+	vkDestroySwapchainKHR(device.device,window->swapchain->swapChain,NULL);
     vkDestroyDevice(device.device,NULL);
     //destroy VkSurfaceKHR
     vkDestroySurfaceKHR(instance->instance,window->surface,NULL);

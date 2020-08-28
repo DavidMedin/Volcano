@@ -2,4 +2,5 @@
 #include "globalVulkan.h"
 #include <vulkan/vulkan.h>
 #include "errorCatch.h"
-int CreateFramebuffers(VkDevice device,VkRenderPass renderPass,VkExtent2D swapExtent,VkImageView* views,unsigned int viewCount,VkFramebuffer** framebuffers,unsigned int* framebufferCount);
+#include "window.h"
+int CreateFramebuffers(VkDevice device,VkRenderPass renderPass,Window win,VkFramebuffer** framebuffers,unsigned int* framebufferCount);

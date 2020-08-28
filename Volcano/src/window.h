@@ -8,7 +8,9 @@
 #include "globalVulkan.h"
 #include "instance.h"
 #include "errorCatch.h"
-#include "swapchain.h"
+#include "graphics.h"
+// #include "swapchain.h"
+
 
 typedef struct Window{
 	GLFWwindow* window;
@@ -18,6 +20,6 @@ typedef struct Window{
 }*Window;
 int InitGLFW();
 void DestroyGLFW();
-void CreateWindow(const char* windowName,Instance* instance,DeviceDetails* device, Window* pWindow);
-void DestoryWindow(Instance instance,DeviceDetails device, Window window);
+void CreateWindow(const char* windowName,Instance* instance,Device* device, Window* pWindow);
+void DestoryWindow(Instance instance,Device device, Window window);
 //void shutdownwindow

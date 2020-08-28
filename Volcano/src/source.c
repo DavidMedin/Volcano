@@ -10,9 +10,10 @@ also init swapchain in createwindow pleeeeas
 
 
 Instance instance;
-DeviceDetails device;
+Device device;
 Window window;
-Window secondWindow;
+
+Shader shad;
 /*
 typedef struct device{
 	VkCommandPool graphicsPool
@@ -26,23 +27,18 @@ typedef struct swapchain{
 swapchain - image - draw command  - shader
 		\- image - draw command -/
 */
-typedef struct Shader Shader;
-typedef struct Swapchain_Shader_Link{
-	VkSwapchainKHR swapchain;
-	unsigned int swapchainCount;
-	VkCommandBuffer* drawCommands;
-	Shader* shader;
-}Swapchain_Shader_Link;
+// typedef struct Shader Shader;
+// typedef struct Swapchain_Shader_Link{
+// 	VkSwapchainKHR swapchain;
+// 	unsigned int swapchainCount;
+// 	VkCommandBuffer* drawCommands;
+// 	Shader* shader;
+// }Swapchain_Shader_Link;
 
-typedef struct Shader{
-	VkPipelineLayout pipelineLayout;
-	VkPipeline graphicsPipeline;
-	Swapchain_Shader_Link* drawLink;
-}Shader;
 
-typedef struct Renderer{
-	VkRenderPass renderPass;
-}Renderer;
+// typedef struct Renderer{
+// 	VkRenderPass renderPass;
+// }Renderer;
 
 // VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;//we'll do mutiple of these in the future
 // VkDevice device = VK_NULL_HANDLE;
@@ -53,12 +49,12 @@ typedef struct Renderer{
 // VkSwapchainKHR swap = VK_NULL_HANDLE;
 
 
-VkPipelineLayout pipelineLayout;
+// VkPipelineLayout pipelineLayout;
 VkRenderPass renderPass;
-VkPipeline graphicsPipeline;
+// VkPipeline graphicsPipeline;
 
 VkFramebuffer* framebuffers;
-unsigned int framebufferCount;//should equal DeviceDetails.swapChain.imageCount
+unsigned int framebufferCount;//should equal DeviceDetails.swapChain->imageCount
 
 VkCommandPool commandPool;//used to optimize the memory of the command buffers
 VkCommandBuffer* commandBuffers;//one for each framebuffer
@@ -75,6 +71,8 @@ unsigned int nextFrame = 0;
 
 
 void Shutdown() {
+	vkDeviceWaitIdle(device.device);//finish everything it is doing so the semaphores are no longer in use
+
 	for(unsigned int i = 0;i < semaphoreCount;i++){
 		vkDestroySemaphore(device.device,imageDrawReady[i],NULL);
 		vkDestroySemaphore(device.device,imagePrezReady[i],NULL);
@@ -87,17 +85,16 @@ void Shutdown() {
 		vkDestroyFramebuffer(device.device,framebuffers[i],NULL);
 	}
 
-	vkDestroyPipeline(device.device,graphicsPipeline,NULL);
-	vkDestroyPipelineLayout(device.device,pipelineLayout,NULL);
+
 	vkDestroyRenderPass(device.device,renderPass,NULL);
 
 
-
-	 DestoryWindow(instance,device,window);
-	//for(unsigned int i = 0; i < window->swapchain.imageCount;i++){
-	//	vkDestroyImageView(device.device,window->swapchain.imageViews[i],NULL);
+	DestroyShader(device,shad);
+	DestoryWindow(instance,device,window);
+	//for(unsigned int i = 0; i < window->swapchain->imageCount;i++){
+	//	vkDestroyImageView(device.device,window->swapchain->imageViews[i],NULL);
 	//}
-	//vkDestroySwapchainKHR(device.device,window->swapchain.swapChain,NULL);
+	//vkDestroySwapchainKHR(device.device,window->swapchain->swapChain,NULL);
 
 
 	//vkDestroyDevice(device.device, NULL);
@@ -118,7 +115,7 @@ void DrawFrame(){
 	vkWaitForFences(device.device,1,&inFlightFences[nextFrame],VK_TRUE,UINT64_MAX);
 	//get an avaiable image from the swap chain
 	unsigned int imageIndex;
-	vkAcquireNextImageKHR(device.device,window->swapchain.swapChain,UINT64_MAX,imageDrawReady[nextFrame],VK_NULL_HANDLE,&imageIndex);
+	vkAcquireNextImageKHR(device.device,window->swapchain->swapChain,UINT64_MAX,imageDrawReady[nextFrame],VK_NULL_HANDLE,&imageIndex);
 
 	vkResetFences(device.device,1,&inFlightFences[nextFrame]);
 	//makes sure we arn't drawing to the same image
@@ -149,7 +146,7 @@ void DrawFrame(){
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = &imagePrezReady[nextFrame];
 	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = &window->swapchain.swapChain;
+	presentInfo.pSwapchains = &window->swapchain->swapChain;
 	presentInfo.pImageIndices = &imageIndex;
 	vkQueuePresentKHR(device.queues[1],&presentInfo);
 	vkDeviceWaitIdle(device.device);//do we need this?
@@ -162,36 +159,19 @@ void DrawFrame(){
 
 //btw vulkan types and defines are way too fucking long
 int main() {
-	//init glfw
-	// if (!InitGLFW(&window)) {
-	// 	printf("Panic! Glfw didn't initialize!\n");
-	// }
-	//create vulkan instance
-	// if (!CreateDevices(instance->instance,window->surface,&(device))) {
-	// 	printf("Couldn't create devices!\n");
-	// }
+	
 	CreateWindow("TestWindow",&instance,&device,&window);
-	CreateWindow("SecondWindow",&instance,&device,&secondWindow);
+	
 
-
-	//find the best device (GPU in this case) and return a virtual device, physical device, and the queue families available  for that device
-	//left this out of create devices to make it more dynamic
-	//create the queues for the device (graphics calls and presentation calls)
-	vkGetDeviceQueue(device.device, device.families.graphics, 0, &(device.queues[0]));//3rd argument is the 0th queue of the queue family
-	vkGetDeviceQueue(device.device, device.families.presentation, 0, &(device.queues[1]));
-
-	if(!CreateRenderPass(device.device,&window->swapchain.swapDets->formats[window->swapchain.chosenFormat],&renderPass)){
-		printf("couldn't create render pass\n");
-	}
-	if(!CreateGraphicsPipeline(device.device,renderPass,window->swapchain.swapExtent,&pipelineLayout,&graphicsPipeline)){
-		printf("Couldn't create graphics pipeline");
-	}
+	CreateRenderPass(&window,&device,&renderPass);
+	
 
 	//create framebuffers
-	if(!CreateFramebuffers(device.device,renderPass,window->swapchain.swapExtent,window->swapchain.imageViews,window->swapchain.imageCount,&framebuffers,&framebufferCount)){
+	if(!CreateFramebuffers(device.device,renderPass,window,&framebuffers,&framebufferCount)){
 		printf("Couldn't create Framebuffer!\n");
 	}
 
+	CreateShader(device,renderPass,window->swapchain,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv",&shad);
 	//create a command pool (stores the command buffers more efficently)
 	if(!CreateCommandPool(device.device,&(device.families),&commandPool)){
 		printf("Couldn't create commandPool\n");
@@ -202,7 +182,7 @@ int main() {
 	}
 	//fill the command buffers
 	commandBufferCount = framebufferCount;
-	if(!FillCommandBuffers(window->swapchain.swapExtent,framebuffers,framebufferCount,graphicsPipeline,renderPass,commandBufferCount,commandBuffers)){
+	if(!FillCommandBuffers(window->swapchain->swapExtent,framebuffers,framebufferCount,shad->graphicsPipeline,renderPass,commandBufferCount,commandBuffers)){
 		printf("Couldn't fill the command buffers\n");
 	}
 
@@ -221,8 +201,8 @@ int main() {
 			printf("Couldn't create a fence! : %d\n",i);
 		}
 	}
-	swapImageFence = malloc(sizeof(VkFence*)*window->swapchain.imageCount);
-	for(unsigned int i = 0;i < window->swapchain.imageCount;i++){
+	swapImageFence = malloc(sizeof(VkFence*)*window->swapchain->imageCount);
+	for(unsigned int i = 0;i < window->swapchain->imageCount;i++){
 		swapImageFence[i] = VK_NULL_HANDLE;
 	}
 
@@ -231,7 +211,6 @@ int main() {
 		glfwPollEvents();
 		DrawFrame();
 	}
-	vkDeviceWaitIdle(device.device);//finish everything it is doing so the semaphores are no longer in use
 	Shutdown();
 	return 0;
 }

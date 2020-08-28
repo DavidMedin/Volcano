@@ -94,7 +94,7 @@ int DeviceHasRequiredExtentions(VkPhysicalDevice device,char** requestedExtentio
 	return 1;
 }
 
-int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,DeviceDetails* devDets){
+int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,Device* devDets){
 	QueueFamilyIndex* families = &devDets->families;
 
 	//check if device is suitable for graphics use
@@ -112,7 +112,7 @@ int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDe
 
 //inputs an instance and a physical device shell
 //returns a physical device thru that shell and queue family info on that device
-int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,DeviceDetails* devDets) { // graphics card for example
+int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,Device* devDets) { // graphics card for example
 	SwapChainSupportDetails* swapDets = &devDets->swapSupport;
 	unsigned int deviceCount = 0;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, NULL);//query the num of devices found
@@ -159,7 +159,7 @@ int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,DeviceDetails* de
 //create the device info
 //create the device
 //input instance,input surface,output phyDevice,output families, output device
-int CreateDevices(VkInstance instance,VkSurfaceKHR surface, DeviceDetails* dets) {
+int CreateDevices(VkInstance instance,VkSurfaceKHR surface, Device* dets) {
 	if (!GetPhysicalDevice(instance,surface,dets)) {
 		return 0;
 	}
@@ -213,6 +213,9 @@ int CreateDevices(VkInstance instance,VkSurfaceKHR surface, DeviceDetails* dets)
 		Error("Couldn't create a logical device. oh no\n");
 	}
 
+
+	vkGetDeviceQueue(dets->device, dets->families.graphics, 0, &(dets->queues[0]));//3rd argument is the 0th queue of the queue family
+	vkGetDeviceQueue(dets->device, dets->families.presentation, 0, &(dets->queues[1]));
 	// //create the swapchain for the device
 	// if(!CreateSwapChain(dets->device,&(dets->families),surface,&(dets->swapChain))){
 	// 	return 0;

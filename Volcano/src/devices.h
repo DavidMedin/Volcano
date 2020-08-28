@@ -28,7 +28,7 @@ typedef struct SwapChainSupportDetails {
 	unsigned int presentCount;
 }SwapChainSupportDetails;
 
-typedef struct DeviceDetails{
+typedef struct Device{
 	VkPhysicalDevice phyDev;
 	VkPhysicalDeviceProperties phyProps;
 
@@ -38,7 +38,7 @@ typedef struct DeviceDetails{
 	VkQueue queues[2];//[0] = graphics, [1] = presentation
 	// unsigned int queueCount;
 	QueueFamilyIndex families;
-}DeviceDetails;
+}Device;
 
-int CreateDevices(VkInstance instance,VkSurfaceKHR surface, DeviceDetails* dets);
-int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,DeviceDetails* devDets);
+int CreateDevices(VkInstance instance,VkSurfaceKHR surface, Device* dets);
+int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,Device* devDets);
