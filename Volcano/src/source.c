@@ -163,13 +163,13 @@ int main() {
 	CreateWindow("TestWindow",&instance,&device,&window);
 	
 
-	CreateRenderPass(&window,&device,&renderPass);
+	CreateRenderPass(&window,1,&device,&renderPass);
 	
 
-	//create framebuffers
-	if(!CreateFramebuffers(device.device,renderPass,window,&framebuffers,&framebufferCount)){
-		printf("Couldn't create Framebuffer!\n");
-	}
+	// //create framebuffers
+	// if(!CreateFramebuffers(device.device,renderPass,window,&framebuffers,&framebufferCount)){
+	// 	printf("Couldn't create Framebuffer!\n");
+	// }
 
 	CreateShader(device,renderPass,window->swapchain,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv",&shad);
 	//create a command pool (stores the command buffers more efficently)

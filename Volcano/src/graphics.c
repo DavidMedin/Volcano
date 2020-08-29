@@ -275,11 +275,12 @@ VkExtent2D Swap_GetBestSwapExtent(SwapChainSupportDetails* dets){
 }
 
 int CreateSwapChain(Device* devDets,VkSurfaceKHR surface, SwapChain* swapchain){
-	*swapchain = malloc(sizeof(struct Swapchain));
+	*swapchain = malloc(sizeof(struct SwapChain));
 	//shortcuts
 	SwapChain deSwap = *swapchain;
 	VkDevice device = devDets->device;
 	QueueFamilyIndex* famz = &devDets->families;
+    (*swapchain)->renderpassCount = 0;
 
 	deSwap->swapDets = &devDets->swapSupport;
 	deSwap->chosenFormat = Swap_GetBestSurfaceFormat(deSwap->swapDets);

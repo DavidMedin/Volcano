@@ -1,6 +1,6 @@
 #include "renderpass.h"
 //need a way to override these things
-void CreateRenderPass(Window* win,unsigned int windowCount, Device* device,VkRenderPass* renderPass){
+void _CreateRenderPass(Window* win,unsigned int windowCount, Device* device,VkRenderPass* renderPass){
     //define the input/output format
     VkAttachmentDescription frameAttachment = {0};
     frameAttachment.format = device->swapSupport.formats[win[0]->swapchain->chosenFormat].format;
@@ -46,6 +46,16 @@ void CreateRenderPass(Window* win,unsigned int windowCount, Device* device,VkRen
     if(vkCreateRenderPass(device->device,&renderInfo,NULL,renderPass) != VK_SUCCESS){
         Error("    Renderpass failed\n");
     }
-    //create framebuffers
     
 }
+
+
+void CreateRenderPass(Window* win,unsigned int windowCount, Device* device,VkRenderPass* renderPass){
+    _CreateRenderPass(win,windowCount,device,renderPass);
+    //create framebuffers
+    CreateFramebuffers((*device).device,renderPass,1,*win);
+}
+//for the future
+// void CreateRenderPasses(Window* win,unsigned int windowCount, Device* device,VkRenderPass* renderPass){
+
+// }

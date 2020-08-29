@@ -1,37 +1,42 @@
 #include "framebuffer.h"
 
-int CreateFramebuffers(VkDevice device,VkRenderPass* renderpasses,unsigned int renderCount,Window win){
+void CreateFramebuffers(VkDevice device,VkRenderPass* renderpasses,unsigned int renderCount,Window win){
     //init the memory where the framebuffers lie
     unsigned int viewCount = win->swapchain->imageCount;
+	SwapChain swap = win->swapchain;
 	//allocate and write to renderers
-	win->swapchain->renderpasses = malloc(sizeof(VkRenderPass)*renderCount);
-	memcpy(win->swapchain->renderpasses,renderpasses,sizeof(VkRenderPass)*renderCount);
-    
-	win->swapchain->framebuffers = malloc(sizeof(VkFramebuffer)*renderCount);
-	VkFramebuffer** framebuffs = win->swapchain->framebuffers;
-	VkFramebuffer* ptr2 = malloc(sizeof(VkFramebuffer)*viewCount*renderCount);
-	
+	unsigned int finalRenderCount = swap->renderpassCount + renderCount;
+	VkRenderPass* tmpRenderers = malloc(sizeof(VkRenderPass)*finalRenderCount);
+	memcpy(tmpRenderers,swap->renderpasses,swap->renderpassCount*sizeof(VkRenderPass));
+	memcpy(tmpRenderers+(swap->renderpassCount*sizeof(VkRenderPass)),renderpasses,sizeof(VkRenderPass)*renderCount);
+    swap->renderpasses = tmpRenderers;
+
+	VkFramebuffer** ptr1 = malloc(sizeof(VkFramebuffer)*finalRenderCount);
+	VkFramebuffer* ptr2 = malloc(sizeof(VkFramebuffer)*viewCount*finalRenderCount);
+	memcpy(ptr2,swap->framebuffers[0],swap->renderpassCount*sizeof(VkFramebuffer));
+	swap->framebuffers = ptr1;
 	//write to part 1 with part 2
-	for(unsigned int i = 0;i < renderCount;i++){
-		framebuffs[i] = ptr2[i*viewCount];
+	for(unsigned int i = 0;i < finalRenderCount;i++){
+		ptr1[i] = &ptr2[i*viewCount];
 	}
 	
-	for(unsigned int r = 0;r < renderCount;r++){
+	for(unsigned int r = swap->renderpassCount;r < finalRenderCount;r++){
 		for(unsigned int i = 0;i < viewCount;i++){
 			VkFramebufferCreateInfo frameInfo ={0};
 			frameInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			frameInfo.renderPass = renderpasses[r];//framebuffer must be compatible with this render pass. neat
+			frameInfo.renderPass = swap->renderpasses[r];//framebuffer must be compatible with this render pass. neat
 			frameInfo.attachmentCount = 1;
-			frameInfo.pAttachments = &win->swapchain->imageViews[i];
-			frameInfo.width = win->swapchain->swapExtent.width;
-			frameInfo.height = win->swapchain->swapExtent.height;
+			frameInfo.pAttachments = &swap->imageViews[i];
+			frameInfo.width = swap->swapExtent.width;
+			frameInfo.height = swap->swapExtent.height;
 			frameInfo.layers = 1;
 
-			if(vkCreateFramebuffer(device,&frameInfo,NULL,&framebuffs[r][i]) != VK_SUCCESS){
+			if(vkCreateFramebuffer(device,&frameInfo,NULL,&ptr1[r][i]) != VK_SUCCESS){
 				Error("    framebuffer create failed\n");
-				return 0;
+				return;
 			}
 		}
 	}
-    return 1;
+	swap->renderpassCount = finalRenderCount;
+
 }

@@ -18,7 +18,7 @@ typedef struct Shader{
 }*Shader;
 
 
-typedef struct Swapchain{
+typedef struct SwapChain{
 	Device* device;
 	VkSwapchainKHR swapChain;
 

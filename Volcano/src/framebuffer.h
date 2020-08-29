@@ -3,4 +3,4 @@
 #include <vulkan/vulkan.h>
 #include "errorCatch.h"
 #include "window.h"
-int CreateFramebuffers(VkDevice device,VkRenderPass renderPass,Window win,VkFramebuffer** framebuffers,unsigned int* framebufferCount);
+void CreateFramebuffers(VkDevice device,VkRenderPass* renderpasses,unsigned int renderCount,Window win);
