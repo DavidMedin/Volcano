@@ -26,8 +26,8 @@
         {
             "label": "premake",
             "type": "shell",
-            "command": "${workspaceFolder}/build.bat",
-            "args": []
+            "command": "${workspaceFolder}/premake5.exe",
+            "args": ["vs2019"]
         }
     ]
 }

@@ -9,32 +9,41 @@ const char* requiredDeviceExtensions[] = {
 //not using device details because this function is called before packing (we don't know which device to use yet)
 //capabilities will be written too
 // returns 1 if there is an available format and present mode, else returns 0
-int DeviceGetSwapChainDetails(VkPhysicalDevice phyDev,VkSurfaceKHR surface,SwapChainSupportDetails* swapDets) {
+int DeviceGetSwapChainDetails(VkPhysicalDevice phyDev,VkSurfaceKHR surface,SwapChainSupportDetails** swapDets) {
+	SwapChainSupportDetails* _swapDets = malloc(sizeof(SwapChainSupportDetails));
+	
 	//get device capabilites
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phyDev, surface, &(swapDets->capabilities));
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phyDev, surface, &(_swapDets->capabilities));
 	//get formats
-	swapDets->formats = NULL;
-	swapDets->formatCount = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(phyDev, surface, &swapDets->formatCount, NULL);
-	if (swapDets->formatCount != 0) {
-		swapDets->formats = malloc(sizeof(VkSurfaceFormatKHR) * swapDets->formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(phyDev, surface, &swapDets->formatCount, swapDets->formats);
+	_swapDets->formats = NULL;
+	_swapDets->formatCount = 0;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(phyDev, surface, &_swapDets->formatCount, NULL);
+	if (_swapDets->formatCount != 0) {
+		_swapDets->formats = malloc(sizeof(VkSurfaceFormatKHR) * _swapDets->formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(phyDev, surface, &_swapDets->formatCount, _swapDets->formats);
 	}
 
 	//get preset modes
-	swapDets->presentModes = NULL;
-	swapDets->presentCount = 0;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(phyDev, surface, &swapDets->presentCount, NULL);
-	if (swapDets->presentCount != 0) {
-		swapDets->presentModes = malloc(sizeof(VkPresentModeKHR) * swapDets->presentCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(phyDev, surface, &swapDets->presentCount, swapDets->presentModes);
+	_swapDets->presentModes = NULL;
+	_swapDets->presentCount = 0;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(phyDev, surface, &_swapDets->presentCount, NULL);
+	if (_swapDets->presentCount != 0) {
+		_swapDets->presentModes = malloc(sizeof(VkPresentModeKHR) * _swapDets->presentCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(phyDev, surface, &_swapDets->presentCount, _swapDets->presentModes);
 	}
-	return swapDets->formatCount > 0 && swapDets->presentCount > 0;
+	int retCondish = _swapDets->formatCount > 0 && _swapDets->presentCount > 0;
+	if(swapDets != NULL)
+		*swapDets = _swapDets;
+	else
+		free(swapDets);
+	
+	return retCondish;
 }
 
 //not asking for device details because this is a check, before packaging into device details
-int HasRequiredQueueFamilies(VkPhysicalDevice phyDev,VkSurfaceKHR surface,QueueFamilyIndex* queueFamilies) {
+int HasRequiredQueueFamilies(VkPhysicalDevice phyDev,VkSurfaceKHR surface,QueueFamilyIndex** queueFams) {
 	//get the queue families the device has
+	QueueFamilyIndex* queueFamilies = malloc(sizeof(QueueFamilyIndex));
 	unsigned int queueCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(phyDev, &queueCount, NULL);
 	VkQueueFamilyProperties* queues = malloc(sizeof(VkQueueFamilyProperties) * queueCount);
@@ -61,10 +70,16 @@ int HasRequiredQueueFamilies(VkPhysicalDevice phyDev,VkSurfaceKHR surface,QueueF
 	free(queues);
 	if (queueFamilies->exists == 0) {
 		//none of the families in this device were for graphics! oh no!
+		free(queueFamilies);
 		return 0;
 	}
-	else return 1;
-
+	else if(queueFams != NULL) {
+			*queueFams = queueFamilies;
+			return 1;
+		}else{ 
+		  free(queueFamilies);
+	  		return 1;
+		}
 }
 
 int DeviceHasRequiredExtentions(VkPhysicalDevice device,char** requestedExtentions) {
@@ -94,8 +109,14 @@ int DeviceHasRequiredExtentions(VkPhysicalDevice device,char** requestedExtentio
 	return 1;
 }
 
-int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,Device* devDets){
-	QueueFamilyIndex* families = &devDets->families;
+int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,QueueFamilyIndex** fams, SwapChainSupportDetails** swapDets){
+	int score = 0;
+	if(props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) score += 3;
+	if(props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) score += 2;
+
+	if(props.apiVersion >= VK_API_VERSION_1_2) score += 3;
+	else if(props.apiVersion >= VK_API_VERSION_1_1) score += 2;
+	else if(props.apiVersion >= VK_API_VERSION_1_0) score += 1;
 
 	//check if device is suitable for graphics use
 		//has a late enough Vulkan api
@@ -103,8 +124,10 @@ int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDe
 		//has the requested queue families (graphics, presentation, etc.)
 		//the device has available extentions (like for surfaces)
 		//the swap chain has an available format and present mode
-	if (props.apiVersion >= VK_API_VERSION_1_2 && props.deviceType ==VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && HasRequiredQueueFamilies(phyDev,surface, families) &&DeviceHasRequiredExtentions(phyDev, (char**)requiredDeviceExtensions) &&DeviceGetSwapChainDetails(phyDev, surface, &devDets->swapSupport))
-		return 1;
+	if (HasRequiredQueueFamilies(phyDev,surface, fams) &&
+		DeviceHasRequiredExtentions(phyDev, (char**)requiredDeviceExtensions) &&
+		DeviceGetSwapChainDetails(phyDev, surface, swapDets))
+		return score;
 	else
 		return 0;	
 }
@@ -124,34 +147,51 @@ int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,Device* devDets) 
 	VkPhysicalDevice* deviceList = malloc(sizeof(VkPhysicalDevice) * deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, deviceList);
 	//pick out the best device
+
+	unsigned int bestIndex;
+	int bestScore = 0;
+
 	swapDets->formats = NULL;
 	swapDets->presentModes = NULL;
+	VkPhysicalDeviceProperties props;
 	for (unsigned int i = 0; i < deviceCount; i++) {
-		VkPhysicalDeviceProperties props;
 		vkGetPhysicalDeviceProperties(deviceList[i], &props);
 
-		//check if device is suitable for graphics use
-			//has a late enough Vulkan api
-			//is a descrete (not integrated) GPU
-			//has the requested queue families (graphics, presentation, etc.)
-			//the device has available extentions (like for surfaces)
-			//the swap chain has an available format and present mode
-		// if (props.apiVersion >= VK_API_VERSION_1_2 && props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && HasRequiredQueueFamilies(deviceList[i],surface, families) && DeviceHasRequiredExtentions(deviceList[i], (char**)requiredDeviceExtensions) && DeviceGetSwapChainDetails(deviceList[i], surface, dets)) {//conditions device must pass
-		if(IsDeviceCompatible(deviceList[i],surface,props,devDets)){
-			//found it!
-			devDets->phyDev = deviceList[i];
-			devDets->phyProps = props;
-			break;
+		int tmpScore = IsDeviceCompatible(deviceList[i],surface,props,NULL,NULL);
+		if(tmpScore > bestScore){//00000000000000000errorpoint
+			bestIndex = i;
+			bestScore = tmpScore;
 		}
-		else {
-			if (swapDets->formats != NULL) free(swapDets->formats);
-			if (swapDets->presentModes != NULL) free(swapDets->presentModes);
-		}
+
+		// if(IsDeviceCompatible(deviceList[i],surface,props,devDets)){
+		// 	//found it!
+		// 	devDets->phyDev = deviceList[i];
+		// 	devDets->phyProps = props;
+		// 	break;
+		// }
+		// else {
+		// 	if (swapDets->formats != NULL) free(swapDets->formats);
+		// 	if (swapDets->presentModes != NULL) free(swapDets->presentModes);
+		// }
 	}
-	if (devDets->phyDev == NULL) {
-		Error("There are no devices that match our requirements!\n");
-		return 0;
+	devDets->phyDev = deviceList[bestIndex];
+	vkGetPhysicalDeviceProperties(deviceList[bestIndex], &props);//we could just save the best but whatever
+	SwapChainSupportDetails* tmpSupDets;
+	QueueFamilyIndex* tmpFam;
+	IsDeviceCompatible(deviceList[bestIndex],surface,props,&tmpFam,&tmpSupDets);
+	devDets->swapSupport = *tmpSupDets;
+	devDets->families = *tmpFam;
+	free(tmpSupDets);
+	free(tmpFam);
+	devDets->phyProps = props;
+	switch(devDets->phyProps.apiVersion){
+		case VK_API_VERSION_1_1: printf("Disclaimer: using Vulkan version 1.1!\n");
+		case VK_API_VERSION_1_0: printf("Disclaimer: using Vulkan version 1.0!\n");
 	}
+	// if (devDets->phyDev == NULL) {
+	// 	Error("There are no devices that match our requirements!\n");
+	// 	return 0;
+	// }
 	return 1;
 }
 

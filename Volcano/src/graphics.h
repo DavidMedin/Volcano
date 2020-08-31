@@ -15,6 +15,10 @@ typedef struct Shader{
 	//index 0:vertex 1:frag 2:geom -- more in the future
 	VkShaderModule* shadMods;
 	unsigned int shadModCount;
+
+	unsigned int swapCount;
+	SwapChain* swapchains;
+	VkCommandBuffer** shaderDrawCommands;//array[shaderCount] of arrays[imageCount]
 }*Shader;
 
 
@@ -39,7 +43,7 @@ typedef struct SwapChain{
 	//links to shaders
 	// unsigned int shaderCount;
 	Shader* shaders;
-	VkCommandBuffer** shaderDrawCommands;//array[shaderCount] of arrays[imageCount]
+	unsigned int shaderCount;
 
 /*
 												count:imageCount*renderpassCount

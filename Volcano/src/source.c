@@ -154,7 +154,13 @@ void DrawFrame(){
 	nextFrame = (nextFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
+/*thinking about lists
+	for(something* element = GetIter(list);Iter(list,element);element++){
 
+
+	}
+
+*/
 
 
 //btw vulkan types and defines are way too fucking long

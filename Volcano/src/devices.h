@@ -41,4 +41,4 @@ typedef struct Device{
 }Device;
 
 int CreateDevices(VkInstance instance,VkSurfaceKHR surface, Device* dets);
-int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,Device* devDets);
+int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,QueueFamilyIndex* fams, SwapChainSupportDetails* swapDets);

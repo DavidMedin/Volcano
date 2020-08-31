@@ -37,7 +37,7 @@ void DestroyGLFW(){
 --not first time output:
     pwindow
 */
-void CreateWindow(const char* windowName,Instance* instance,Device* device, Window* pWindow, VkRenderPass* renderpass){
+void CreateWindow(const char* windowName,Instance* instance,Device* device, Window* pWindow){
 	//once
     if(!vulkanInit)
         if(!InitGLFW()) return;
@@ -56,7 +56,7 @@ void CreateWindow(const char* windowName,Instance* instance,Device* device, Wind
     if(!vulkanInit)
         CreateDevices((*instance)->instance,(*pWindow)->surface,device);
     else
-        if(!IsDeviceCompatible(device->phyDev,(*pWindow)->surface,device->phyProps,device)){
+        if(!IsDeviceCompatible(device->phyDev,(*pWindow)->surface,device->phyProps,&device->families,&device->swapSupport)){
             Error("This surface doesn't comply with the picked device. wack\n");
         }
     CreateSwapChain(device,(*pWindow)->surface,&(*pWindow)->swapchain);

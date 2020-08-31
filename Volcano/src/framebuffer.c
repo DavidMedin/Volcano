@@ -7,13 +7,13 @@ void CreateFramebuffers(VkDevice device,VkRenderPass* renderpasses,unsigned int 
 	//allocate and write to renderers
 	unsigned int finalRenderCount = swap->renderpassCount + renderCount;
 	VkRenderPass* tmpRenderers = malloc(sizeof(VkRenderPass)*finalRenderCount);
-	memcpy(tmpRenderers,swap->renderpasses,swap->renderpassCount*sizeof(VkRenderPass));
+	if(swap->renderpassCount) memcpy(tmpRenderers,swap->renderpasses,swap->renderpassCount*sizeof(VkRenderPass));
 	memcpy(tmpRenderers+(swap->renderpassCount*sizeof(VkRenderPass)),renderpasses,sizeof(VkRenderPass)*renderCount);
     swap->renderpasses = tmpRenderers;
 
 	VkFramebuffer** ptr1 = malloc(sizeof(VkFramebuffer)*finalRenderCount);
 	VkFramebuffer* ptr2 = malloc(sizeof(VkFramebuffer)*viewCount*finalRenderCount);
-	memcpy(ptr2,swap->framebuffers[0],swap->renderpassCount*sizeof(VkFramebuffer));
+	if(swap->renderpassCount) (ptr2,swap->framebuffers[0],swap->renderpassCount*sizeof(VkFramebuffer));
 	swap->framebuffers = ptr1;
 	//write to part 1 with part 2
 	for(unsigned int i = 0;i < finalRenderCount;i++){

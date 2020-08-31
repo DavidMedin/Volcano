@@ -254,12 +254,17 @@ unsigned int Swap_GetBestSurfaceFormat(SwapChainSupportDetails* dets){
 }
 
 unsigned int Swap_GetBestPresentMode(SwapChainSupportDetails* dets){
+    unsigned int fifo = 0;
 	for(unsigned int i=0;i < dets->presentCount;i++){
-		if(dets->presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR){
-			return i;
-		}
+		switch(dets->presentModes[i]){
+            case VK_PRESENT_MODE_MAILBOX_KHR:
+                return i;
+            case VK_PRESENT_MODE_FIFO_KHR:
+                fifo = i;
+        }
+        return fifo;
 	}
-	Error("no triple buffer present mode, falling back to double buffer");
+	printf("no triple buffer present mode, falling back to double buffer\n");
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
