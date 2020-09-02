@@ -14,31 +14,6 @@ Device device;
 Window window;
 
 Shader shad;
-/*
-typedef struct device{
-	VkCommandPool graphicsPool
-}device;
-
-typedef struct swapchain{
-	jasdlkfjlksdajflkads
-	unsigned int chainlinkCount;
-};
-		 /- image - draw command-\
-swapchain - image - draw command  - shader
-		\- image - draw command -/
-*/
-// typedef struct Shader Shader;
-// typedef struct Swapchain_Shader_Link{
-// 	VkSwapchainKHR swapchain;
-// 	unsigned int swapchainCount;
-// 	VkCommandBuffer* drawCommands;
-// 	Shader* shader;
-// }Swapchain_Shader_Link;
-
-
-// typedef struct Renderer{
-// 	VkRenderPass renderPass;
-// }Renderer;
 
 // VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;//we'll do mutiple of these in the future
 // VkDevice device = VK_NULL_HANDLE;
@@ -91,21 +66,10 @@ void Shutdown() {
 
 	DestroyShader(device,shad);
 	DestoryWindow(instance,device,window);
-	//for(unsigned int i = 0; i < window->swapchain->imageCount;i++){
-	//	vkDestroyImageView(device.device,window->swapchain->imageViews[i],NULL);
-	//}
-	//vkDestroySwapchainKHR(device.device,window->swapchain->swapChain,NULL);
 
-
-	//vkDestroyDevice(device.device, NULL);
-	//vkDestroySurfaceKHR(instance->instance, window->surface, NULL);
 
 	 DestoryInstance(instance);
-	//if (enableValidationLayers) {
-	//	DestroyDebugMessenger(instance->instance, instance->debugMessenger, NULL);
-	//}
-	//vkDestroyInstance(instance->instance, NULL);
-	//glfwDestroyWindow(window->window);
+
 	DestroyGLFW();
 
 }
@@ -162,10 +126,8 @@ void DrawFrame(){
 
 */
 
-
 //btw vulkan types and defines are way too fucking long
 int main() {
-	
 	CreateWindow("TestWindow",&instance,&device,&window);
 	
 

@@ -6,19 +6,18 @@
 #include "errorCatch.h"
 // #include "window.h"
 #include "devices.h"
-
-
+#include "list.h"
+typedef struct SwapChain *SwapChain;
 typedef struct Shader{
 	VkPipelineLayout pipelineLayout;
-	VkPipeline graphicsPipeline;
 
 	//index 0:vertex 1:frag 2:geom -- more in the future
 	VkShaderModule* shadMods;
 	unsigned int shadModCount;
 
-	unsigned int swapCount;
-	SwapChain* swapchains;
-	VkCommandBuffer** shaderDrawCommands;//array[shaderCount] of arrays[imageCount]
+	List* swapchains;//list of SwapChains
+	List* graphicsPipelines;// VkPipline
+	List* shaderDrawCommands;//list of an array of VkCommandBuffers
 }*Shader;
 
 
@@ -42,7 +41,7 @@ typedef struct SwapChain{
 	// unsigned int framebufferCount;//should equal to imageCount
 	//links to shaders
 	// unsigned int shaderCount;
-	Shader* shaders;
+	List* shaders;//list of Shaders
 	unsigned int shaderCount;
 
 /*
