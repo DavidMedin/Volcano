@@ -6,18 +6,23 @@
 #include "globalVulkan.h"
 #include "validationLayers.h"
 #include "devices.h"
-typedef struct Instance{
+struct Instance{
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
-}*Instance;
+    Instance();
+    ~Instance();
+};
 
 //init glfw
 // void StartVulkan(Instance* instance,DeviceDetails* device);
-void CreateInstance(Instance* instance);
-void DestoryInstance(Instance instance);
+// void CreateInstance(Instance* instance);
+// void DestoryInstance(Instance* instance);
 
 //not used outside of instance.c
 const char** GetInstanceValidationLayers(unsigned int* count);
 void InstanceGetRequiredExtensions(unsigned int* count, char*** names);
 void InstantiateInstance(VkInstance* instance, VkDebugUtilsMessengerEXT* debugMessenger);
+
+Instance* GetCurrentInstance();
+void SetCurrentInstance(Instance* instance);
 //void Shutdown();

@@ -1,5 +1,5 @@
 #include "instance.h"
-
+Instance* currentInstance;
 
 //requested validation layers
 const char* validationLayers[] = {
@@ -12,19 +12,24 @@ const char** GetInstanceValidationLayers(unsigned int* count) {
 }
 
 
-void CreateInstance(Instance* instance){
-	*instance = malloc(sizeof(struct Instance));
-	InstantiateInstance(&((*instance)->instance),&((*instance)->debugMessenger));
+Instance::Instance(){
+	// *instance = malloc(sizeof(struct Instance));
+	InstantiateInstance(&instance,&debugMessenger);
 }
 
-void DestoryInstance(Instance instance){
+Instance::~Instance(){
 	if (enableValidationLayers) {
-		DestroyDebugMessenger(instance->instance, instance->debugMessenger, NULL);
+		DestroyDebugMessenger(instance, debugMessenger, NULL);
 	}
-	vkDestroyInstance(instance->instance, NULL);
+	vkDestroyInstance(instance, NULL);
 }
 
-
+Instance* GetCurrentInstance(){
+	return currentInstance;
+}
+void SetCurrentInstance(Instance* instance){
+	currentInstance = instance;
+}
 
 void InstanceGetRequiredExtensions(unsigned int* count, char*** names) {//pointer to a pointer to arrays(pointers)
 	char** list;//points to an array of strings
@@ -37,7 +42,7 @@ void InstanceGetRequiredExtensions(unsigned int* count, char*** names) {//pointe
 		//add validation layer extention to list---------------------------------
 		//need to realocate list
 		listCount++;
-		char** tmpList = malloc(sizeof(char*) * listCount);
+		char** tmpList = (char**)malloc(sizeof(char*) * listCount);
 		memcpy(tmpList, list, (listCount - 1) * sizeof(char*));//copy the addresses from list to tmplist using count+1-1
 		//free(list);
 		tmpList[listCount - 1] = "VK_EXT_debug_utils";

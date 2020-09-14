@@ -5,7 +5,7 @@ project "Volcano"
 	location "Volcano"
 	objdir "%{prj.name}/tmp"
 	kind "ConsoleApp"
-	language "C"
+	language "C++"
 	targetdir "bin/%{cfg.buildcfg}"
 	
 	files {"Volcano/src/*.*"}--includes all the c/h files

@@ -3,4 +3,4 @@
 #include "window.h"
 #include "framebuffer.h"
 typedef VkRenderPass Renderpass;
-void CreateRenderPass(Window* win,unsigned int windowCount, Device* device,VkRenderPass* renderPass);
+void CreateRenderPass(Window* win, Device* device,VkRenderPass* renderPass);

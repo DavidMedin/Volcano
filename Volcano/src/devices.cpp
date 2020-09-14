@@ -9,75 +9,75 @@ const char* requiredDeviceExtensions[] = {
 //not using device details because this function is called before packing (we don't know which device to use yet)
 //capabilities will be written too
 // returns 1 if there is an available format and present mode, else returns 0
-int DeviceGetSwapChainDetails(VkPhysicalDevice phyDev,VkSurfaceKHR surface,SwapChainSupportDetails** swapDets) {
-	SwapChainSupportDetails* _swapDets = malloc(sizeof(SwapChainSupportDetails));
+int DeviceGetSwapChainDetails(VkPhysicalDevice phyDev,VkSurfaceKHR surface,SwapChainSupportDetails* swapDets) {
+	SwapChainSupportDetails _swapDets = {0};
 	
 	//get device capabilites
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phyDev, surface, &(_swapDets->capabilities));
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phyDev, surface, &(_swapDets.capabilities));
 	//get formats
-	_swapDets->formats = NULL;
-	_swapDets->formatCount = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(phyDev, surface, &_swapDets->formatCount, NULL);
-	if (_swapDets->formatCount != 0) {
-		_swapDets->formats = malloc(sizeof(VkSurfaceFormatKHR) * _swapDets->formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(phyDev, surface, &_swapDets->formatCount, _swapDets->formats);
+	_swapDets.formats = NULL;
+	_swapDets.formatCount = 0;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(phyDev, surface, &_swapDets.formatCount, NULL);
+	if (_swapDets.formatCount != 0) {
+		_swapDets.formats = (VkSurfaceFormatKHR*)malloc(sizeof(VkSurfaceFormatKHR) * _swapDets.formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(phyDev, surface, &_swapDets.formatCount, _swapDets.formats);
 	}
 
 	//get preset modes
-	_swapDets->presentModes = NULL;
-	_swapDets->presentCount = 0;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(phyDev, surface, &_swapDets->presentCount, NULL);
-	if (_swapDets->presentCount != 0) {
-		_swapDets->presentModes = malloc(sizeof(VkPresentModeKHR) * _swapDets->presentCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(phyDev, surface, &_swapDets->presentCount, _swapDets->presentModes);
+	_swapDets.presentModes = NULL;
+	_swapDets.presentCount = 0;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(phyDev, surface, &_swapDets.presentCount, NULL);
+	if (_swapDets.presentCount != 0) {
+		_swapDets.presentModes = (VkPresentModeKHR*)malloc(sizeof(VkPresentModeKHR) * _swapDets.presentCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(phyDev, surface, &_swapDets.presentCount, _swapDets.presentModes);
 	}
-	int retCondish = _swapDets->formatCount > 0 && _swapDets->presentCount > 0;
-	if(swapDets != NULL)
+	int retCondish = _swapDets.formatCount > 0 && _swapDets.presentCount > 0;
+	if(swapDets != NULL){
 		*swapDets = _swapDets;
-	else
-		free(swapDets);
-	
-	return retCondish;
+		return retCondish;
+	}else
+		// free(swapDets);
+		return retCondish;
 }
 
 //not asking for device details because this is a check, before packaging into device details
-int HasRequiredQueueFamilies(VkPhysicalDevice phyDev,VkSurfaceKHR surface,QueueFamilyIndex** queueFams) {
+int HasRequiredQueueFamilies(VkPhysicalDevice phyDev,VkSurfaceKHR surface,QueueFamilyIndex* queueFams) {
 	//get the queue families the device has
-	QueueFamilyIndex* queueFamilies = malloc(sizeof(QueueFamilyIndex));
+	QueueFamilyIndex queueFamilies = {0};
 	unsigned int queueCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(phyDev, &queueCount, NULL);
-	VkQueueFamilyProperties* queues = malloc(sizeof(VkQueueFamilyProperties) * queueCount);
+	VkQueueFamilyProperties* queues = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * queueCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(phyDev, &queueCount, queues);
 
-	queueFamilies->familyCount = 0;
-	queueFamilies->exists = 0;
+	queueFamilies.familyCount = 0;
+	queueFamilies.exists = 0;
 	for (unsigned int i = 0; i < queueCount; i++) {
 		//check which one is for graphics calls
 		VkBool32 presentable = 0;
 		vkGetPhysicalDeviceSurfaceSupportKHR(phyDev, i, surface, &presentable);
 		if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-			queueFamilies->graphics = i;
-			queueFamilies->exists |= GRAPHICS_BIT;
-			queueFamilies->familyCount++;
+			queueFamilies.graphics = i;
+			queueFamilies.exists |= GRAPHICS_BIT;
+			queueFamilies.familyCount++;
 		}
-		if (presentable && !(queueFamilies->exists & PRESENTATION_BIT)) {
+		if (presentable && !(queueFamilies.exists & PRESENTATION_BIT)) {
 			//this queue also supports the presentation queue
-			queueFamilies->presentation = i;
-			queueFamilies->exists |= PRESENTATION_BIT;
-			queueFamilies->graphics == queueFamilies->presentation ? 1 : queueFamilies->familyCount++;
+			queueFamilies.presentation = i;
+			queueFamilies.exists |= PRESENTATION_BIT;
+			queueFamilies.graphics == queueFamilies.presentation ? 1 : queueFamilies.familyCount++;
 		}
 	}
 	free(queues);
-	if (queueFamilies->exists == 0) {
+	if (queueFamilies.exists == 0) {
 		//none of the families in this device were for graphics! oh no!
-		free(queueFamilies);
+		// free(queueFamilies);
 		return 0;
 	}
 	else if(queueFams != NULL) {
 			*queueFams = queueFamilies;
 			return 1;
 		}else{ 
-		  free(queueFamilies);
+		  	// free(queueFamilies);
 	  		return 1;
 		}
 }
@@ -85,7 +85,7 @@ int HasRequiredQueueFamilies(VkPhysicalDevice phyDev,VkSurfaceKHR surface,QueueF
 int DeviceHasRequiredExtentions(VkPhysicalDevice device,char** requestedExtentions) {
 	unsigned int extentionCount;
 	vkEnumerateDeviceExtensionProperties(device, NULL, &extentionCount, NULL);
-	VkExtensionProperties* extentionProps = malloc(sizeof(VkExtensionProperties) * extentionCount);
+	VkExtensionProperties* extentionProps = (VkExtensionProperties*)malloc(sizeof(VkExtensionProperties) * extentionCount);
 	vkEnumerateDeviceExtensionProperties(device, NULL, &extentionCount, extentionProps);
 
 	for (unsigned int j = 0; j < sizeof(requestedExtentions) / sizeof(void*); j++) {//go though all required extenstions
@@ -109,7 +109,7 @@ int DeviceHasRequiredExtentions(VkPhysicalDevice device,char** requestedExtentio
 	return 1;
 }
 
-int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,QueueFamilyIndex** fams, SwapChainSupportDetails** swapDets){
+int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,QueueFamilyIndex* fams, SwapChainSupportDetails* swapDets){
 	int score = 0;
 	if(props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) score += 3;
 	if(props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) score += 2;
@@ -144,7 +144,7 @@ int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,Device* devDets) 
 		return 0;
 	}
 	//a pointer to an array of device pointers
-	VkPhysicalDevice* deviceList = malloc(sizeof(VkPhysicalDevice) * deviceCount);
+	VkPhysicalDevice* deviceList = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, deviceList);
 	//pick out the best device
 
@@ -176,13 +176,13 @@ int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,Device* devDets) 
 	}
 	devDets->phyDev = deviceList[bestIndex];
 	vkGetPhysicalDeviceProperties(deviceList[bestIndex], &props);//we could just save the best but whatever
-	SwapChainSupportDetails* tmpSupDets;
-	QueueFamilyIndex* tmpFam;
-	IsDeviceCompatible(deviceList[bestIndex],surface,props,&tmpFam,&tmpSupDets);
-	devDets->swapSupport = *tmpSupDets;
-	devDets->families = *tmpFam;
-	free(tmpSupDets);
-	free(tmpFam);
+	// SwapChainSupportDetails* tmpSupDets;
+	// QueueFamilyIndex* tmpFam;
+	IsDeviceCompatible(deviceList[bestIndex],surface,props,&devDets->families,&devDets->swapSupport);
+	// devDets->swapSupport = *tmpSupDets;
+	// devDets->families = *tmpFam;
+	// free(tmpSupDets);
+	// free(tmpFam);
 	devDets->phyProps = props;
 	switch(devDets->phyProps.apiVersion){
 		case VK_API_VERSION_1_1: printf("Disclaimer: using Vulkan version 1.1!\n");
@@ -199,19 +199,20 @@ int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,Device* devDets) 
 //create the device info
 //create the device
 //input instance,input surface,output phyDevice,output families, output device
-int CreateDevices(VkInstance instance,VkSurfaceKHR surface, Device* dets) {
-	if (!GetPhysicalDevice(instance,surface,dets)) {
-		return 0;
+Device::Device(VkSurfaceKHR surface) {
+	VkInstance instance = GetCurrentInstance()->instance;
+	if (!GetPhysicalDevice(instance,surface,this)) {
+		return;
 	}
 	//Creating a graphics logical device-------------------------------------
 	//create info about queues to be created
 	float priorities = 1.0f;//everything might just be 1
 
-	VkDeviceQueueCreateInfo* queueInfos = malloc(sizeof(VkDeviceQueueCreateInfo) * dets->families.familyCount);
+	VkDeviceQueueCreateInfo* queueInfos = (VkDeviceQueueCreateInfo*)malloc(sizeof(VkDeviceQueueCreateInfo) * families.familyCount);
 	unsigned int nextIndex = 0;
-	if (dets->families.exists & GRAPHICS_BIT) {
+	if (families.exists & GRAPHICS_BIT) {
 		queueInfos[nextIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueInfos[nextIndex].queueFamilyIndex = dets->families.graphics;
+		queueInfos[nextIndex].queueFamilyIndex = families.graphics;
 		queueInfos[nextIndex].queueCount = 1;
 		queueInfos[nextIndex].pQueuePriorities = &priorities;//this can be an array in the future
 		queueInfos[nextIndex].pNext = NULL;
@@ -219,9 +220,9 @@ int CreateDevices(VkInstance instance,VkSurfaceKHR surface, Device* dets) {
 		nextIndex++;
 	}
 	//-------------------------
-	if (dets->families.exists & PRESENTATION_BIT && dets->families.graphics != dets->families.presentation) {
+	if (families.exists & PRESENTATION_BIT && families.graphics != families.presentation) {
 		queueInfos[nextIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueInfos[nextIndex].queueFamilyIndex = dets->families.presentation;
+		queueInfos[nextIndex].queueFamilyIndex = families.presentation;
 		queueInfos[nextIndex].queueCount = 1;
 		queueInfos[nextIndex].pQueuePriorities = &priorities;//this can be an array in the future
 		queueInfos[nextIndex].pNext = NULL;
@@ -245,21 +246,20 @@ int CreateDevices(VkInstance instance,VkSurfaceKHR surface, Device* dets) {
 	deviceInfo.enabledExtensionCount = 1;
 	deviceInfo.ppEnabledExtensionNames = requiredDeviceExtensions;
 	deviceInfo.pEnabledFeatures = NULL;
-	deviceInfo.queueCreateInfoCount = dets->families.familyCount;//when we add more queues we need to inc this
+	deviceInfo.queueCreateInfoCount = families.familyCount;//when we add more queues we need to inc this
 	deviceInfo.pQueueCreateInfos = queueInfos;
 	deviceInfo.flags = 0;
 	deviceInfo.pNext = NULL;
-	if (vkCreateDevice(dets->phyDev, &deviceInfo, NULL, &(dets->device)) != VK_SUCCESS) {
+	if (vkCreateDevice(phyDev, &deviceInfo, NULL, &(device)) != VK_SUCCESS) {
 		Error("Couldn't create a logical device. oh no\n");
 	}
 
 
-	vkGetDeviceQueue(dets->device, dets->families.graphics, 0, &(dets->queues[0]));//3rd argument is the 0th queue of the queue family
-	vkGetDeviceQueue(dets->device, dets->families.presentation, 0, &(dets->queues[1]));
+	vkGetDeviceQueue(device, families.graphics, 0, &(queues[0]));//3rd argument is the 0th queue of the queue family
+	vkGetDeviceQueue(device, families.presentation, 0, &(queues[1]));
 	// //create the swapchain for the device
 	// if(!CreateSwapChain(dets->device,&(dets->families),surface,&(dets->swapChain))){
 	// 	return 0;
 	// }	
 
-	return 1;
 }

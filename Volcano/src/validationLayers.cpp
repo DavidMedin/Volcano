@@ -4,7 +4,7 @@
 int CheckValidationLayerSupport() {
 	uint32_t availableLayerCount = 0;
 	vkEnumerateInstanceLayerProperties(&availableLayerCount, NULL);
-	VkLayerProperties* availableLayers = malloc(sizeof(VkLayerProperties) * availableLayerCount);
+	VkLayerProperties* availableLayers = (VkLayerProperties*)malloc(sizeof(VkLayerProperties) * availableLayerCount);
 
 	vkEnumerateInstanceLayerProperties(&availableLayerCount, availableLayers);
 

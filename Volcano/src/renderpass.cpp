@@ -1,6 +1,6 @@
 #include "renderpass.h"
 //need a way to override these things
-void _CreateRenderPass(Window win, Device* device,VkRenderPass* renderPass){
+void CreateRenderPass(Window* win, Device* device,VkRenderPass* renderPass){
     //define the input/output format
     VkAttachmentDescription frameAttachment = {0};
     frameAttachment.format = device->swapSupport.formats[win->swapchain->chosenFormat].format;
@@ -25,7 +25,7 @@ void _CreateRenderPass(Window win, Device* device,VkRenderPass* renderPass){
     //referenced in the fragment shader by "layout(location=0) out vec4 outColor"!
 
     //create a render pass
-    VkRenderPassCreateInfo renderInfo = {0};
+    VkRenderPassCreateInfo renderInfo = {};
     renderInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderInfo.attachmentCount = 1;
     renderInfo.pAttachments = &frameAttachment;
@@ -50,13 +50,14 @@ void _CreateRenderPass(Window win, Device* device,VkRenderPass* renderPass){
 }
 
 
-void CreateRenderPass(Window* win,unsigned int windowCount, Device* device,VkRenderPass* renderPass){
-    _CreateRenderPass(win[0],device,renderPass);//win is needed for formats, and all windows should have the same format
-    //create framebuffers
-    for(unsigned int i = 0;i < windowCount;i++){
-        CreateFramebuffers((*device).device,renderPass,1,win[i]);
-    }
-}
+// void CreateRenderPass(Window** win,unsigned int windowCount, Device* device,VkRenderPass* renderPass){
+//     _CreateRenderPass(win[0],device,renderPass);//win is needed for formats, and all windows should have the same format
+//     //create framebuffers
+//     for(unsigned int i = 0;i < windowCount;i++){
+//         //does nothing for now
+//         CreateFramebuffers((*device).device,renderPass,1,win[i]);
+//     }
+// }
 //for the future
 // void CreateRenderPasses(Window* win,unsigned int windowCount, Device* device,VkRenderPass* renderPass){
 

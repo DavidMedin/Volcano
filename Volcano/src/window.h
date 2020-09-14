@@ -12,14 +12,17 @@
 // #include "swapchain.h"
 
 
-typedef struct Window{
+struct Window{
+	Instance* instance;//the instance that created it. Only really used for destruction of the window.
+
 	GLFWwindow* window;
     VkSurfaceKHR surface;
-	SwapChain swapchain;
+	SwapChain* swapchain;
 	// DeviceDetails devDets;
-}*Window;
+	Window(const char* windowName,Device** device);
+};
 int InitGLFW();
 void DestroyGLFW();
-void CreateWindow(const char* windowName,Instance* instance,Device* device, Window* pWindow);
-void DestoryWindow(Instance instance,Device device, Window window);
+// void CreateWindow(const char* windowName,Instance* instance,Device* device, Window* pWindow);
+void DestoryWindow(Device* device, Window *window);
 //void shutdownwindow

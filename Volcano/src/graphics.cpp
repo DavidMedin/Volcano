@@ -12,7 +12,7 @@ int ReadTheFile(const char* path,char** buff,unsigned int* buffSize){
     *buffSize = ftell(file);//read the cursor pos
     fseek(file,0L,SEEK_SET);//put the cursor to the front
     //allocate mem for the buffer from size
-    *buff = calloc(*buffSize,1);
+    *buff = (char*)calloc(*buffSize,1);
     fread(*buff,1,*buffSize,file);
     fclose(file);
     return 1;
@@ -21,35 +21,61 @@ int ReadTheFile(const char* path,char** buff,unsigned int* buffSize){
 
 
 
-VkShaderModule CreateShaderModule(Device device,char* code,unsigned int codeSize){
-    VkShaderModuleCreateInfo shaderInfo = {0};
+VkShaderModule CreateShaderModule(Device* device,char* code,unsigned int codeSize){
+    VkShaderModuleCreateInfo shaderInfo = {};
     shaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     shaderInfo.codeSize = (size_t)codeSize;
     shaderInfo.pCode = (uint32_t*)code;
     VkShaderModule shader;
-    if(vkCreateShaderModule(device.device,&shaderInfo,NULL,&shader) != VK_SUCCESS){
+    if(vkCreateShaderModule(device->device,&shaderInfo,NULL,&shader) != VK_SUCCESS){
         Error("CreateShaderModule failed to create a shader!\n");
         return NULL;
     }
     return shader;
 }
 
-void CreateShader(Device device,VkRenderPass renderpass, SwapChain swap,const char* vertexShader,const char* fragmentShader, Shader* shad){
-    *shad = malloc(sizeof(struct Shader));
-    Shader deShad = *shad;
-
-    deShad->shadModCount = 2;
-    deShad->shadMods = malloc(sizeof(VkShaderModule));
+// void CreateShader(Device device,VkRenderPass renderpass, SwapChain swap,const char* vertexShader,const char* fragmentShader, Shader* shad){
+Shader::Shader(Device* device,VkRenderPass renderpass, SwapChain* swap,const char* vertexShader,const char* fragmentShader){
+    // *shad = malloc(sizeof(struct Shader));
+    // Shader deShad = *shad;
+    this->device = device;
+    this->renderpass = renderpass;
+    cmdPool = CreateCommandPool(this->device->device,&device->families);
+    pipelineLayout = CreatePipeLayout(device);
+    shadModCount = 2;
+    shadMods = (VkShaderModule*)malloc(sizeof(VkShaderModule));
 
     const char* shaders[] = {vertexShader,fragmentShader};
-    for(unsigned int i = 0; i < deShad->shadModCount;i++){
+    for(unsigned int i = 0; i < shadModCount;i++){
         unsigned int codeSize = 0;
         char* code;
         ReadTheFile(shaders[i],&code,&codeSize);
-        deShad->shadMods[i] = CreateShaderModule(device,code,codeSize);
+        shadMods[i] = CreateShaderModule(device,code,codeSize);
         free(code);
     }
-    CreateGraphicsPipeline(device,renderpass,swap->swapExtent,deShad);
+}
+void Shader::RegisterSwapChains(std::initializer_list<SwapChain*> swaps){
+    for(auto swap : swaps){
+        swapchains.push_back(swap);
+        graphicsPipelines.push_back(CreateGraphicsPipeline(device,pipelineLayout,renderpass,swap->swapExtent,this));
+        drawCommands.push_back(CreateCommandBuffers(device,cmdPool,swap->imageCount));
+        //find the framebuffers that releate to our renderpass
+        auto iter = swap->renderpasses.begin();
+        auto frameIter = swap->framebuffers.begin();
+        for(unsigned int i = 0;iter != swap->renderpasses.end();i++){
+            if(*iter == renderpass) {
+                std::advance(frameIter,i);//TEST ITTTTT
+                break;
+            }
+            iter++;
+        }
+        if(*iter != renderpass){
+            Error("something went wrong in the for loop!\n");
+        }
+        //framebuffers are empty?
+        FillCommandBuffers(swap->swapExtent,*frameIter,graphicsPipelines.back(),renderpass,drawCommands.back());
+        swap->shaders.push_back(this);
+    }
 }
 // void CreateShader(Device device,VkRenderPass renderpass, SwapChain* swap, VkShaderModule vertexShader,VkShaderModule fragmentShader, Shader* shad){
 //      *shad = malloc(sizeof(struct Shader));
@@ -63,15 +89,28 @@ void CreateShader(Device device,VkRenderPass renderpass, SwapChain swap,const ch
 //     CreateGraphicsPipeline(device,renderpass,swap->swapExtent,deShad);
 // }
 
-void DestroyShader(Device device, Shader shad){
+void DestroyShader(Device* device, Shader* shad){
     for(unsigned int i = 0; i < shad->shadModCount;i++){
-        vkDestroyShaderModule(device.device,shad->shadMods[i],NULL);
+        vkDestroyShaderModule(device->device,shad->shadMods[i],NULL);
     }
-    vkDestroyPipeline(device.device,shad->graphicsPipeline,NULL);
-	vkDestroyPipelineLayout(device.device,shad->pipelineLayout,NULL);
+    // vkDestroyPipeline(device.device,shad->graphicsPipeline,NULL);//hold that though
+	vkDestroyPipelineLayout(device->device,shad->pipelineLayout,NULL);
 }
 
-void CreateGraphicsPipeline(Device device,VkRenderPass renderPass,VkExtent2D viewExtent,Shader shad){
+VkPipelineLayout CreatePipeLayout(Device* device){
+    //create the pipline layout
+    VkPipelineLayout pipelineLayout;
+    VkPipelineLayoutCreateInfo layoutInfo = {};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    //a bunch of other info goes here later
+
+    if(vkCreatePipelineLayout(device->device,&layoutInfo,NULL,&pipelineLayout) != VK_SUCCESS){
+        Error("    PipelineLayout\n");
+    }
+    return pipelineLayout;
+}
+
+VkPipeline CreateGraphicsPipeline(Device* device,VkPipelineLayout layout, VkRenderPass renderPass,VkExtent2D viewExtent,Shader* shad){
     //read the files
     // char* fragmentCode;
     // unsigned int fragmentSize=0;
@@ -87,7 +126,7 @@ void CreateGraphicsPipeline(Device device,VkRenderPass renderPass,VkExtent2D vie
     //     Error("one of the shader modules are bad\n");
     // }
     //assign the shader stage (vertexShaderMod to vertex shader stage)
-    VkPipelineShaderStageCreateInfo shaderStages[2] = {0,0};
+    VkPipelineShaderStageCreateInfo shaderStages[2] = {{},{}};
     VkShaderStageFlagBits bits[2] = {VK_SHADER_STAGE_VERTEX_BIT,VK_SHADER_STAGE_FRAGMENT_BIT};
     //put into a loop for now, to add geometry shader you just need to add into the bits, shader stages, moduels and destory (needs to be more elegant)
     for(unsigned int i = 0;i < 2;i++){
@@ -98,18 +137,18 @@ void CreateGraphicsPipeline(Device device,VkRenderPass renderPass,VkExtent2D vie
         shaderStages[i].pSpecializationInfo = NULL;//defines constants so Vulkan can optimize the shader around them! Very cool.
     }
     //describe the vertex input (like bindings and attributes)
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {0};
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType =  VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 0;
     vertexInputInfo.vertexAttributeDescriptionCount = 0;
     //input assembly, triangles vs lines
-    VkPipelineInputAssemblyStateCreateInfo inputAssInfo = {0};
+    VkPipelineInputAssemblyStateCreateInfo inputAssInfo = {};
     inputAssInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssInfo.primitiveRestartEnable = VK_FALSE;
     //define the viewport and scissors(?)
-    VkPipelineViewportStateCreateInfo viewState = {0};
-    VkViewport viewport = {0};
+    VkPipelineViewportStateCreateInfo viewState = {};
+    VkViewport viewport = {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
     viewport.width = (float)viewExtent.width;
@@ -128,7 +167,7 @@ void CreateGraphicsPipeline(Device device,VkRenderPass renderPass,VkExtent2D vie
     viewState.pScissors = &scissor;
 
     //create the rasterizer
-    VkPipelineRasterizationStateCreateInfo rasterizer = {0};
+    VkPipelineRasterizationStateCreateInfo rasterizer = {};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;//fragments outide of the near/far plane are clamped
     rasterizer.rasterizerDiscardEnable = VK_FALSE;//basically disables the rasterizer (no output)
@@ -141,12 +180,12 @@ void CreateGraphicsPipeline(Device device,VkRenderPass renderPass,VkExtent2D vie
     rasterizer.depthBiasClamp = 0.0f;
     rasterizer.depthBiasSlopeFactor = 0.0f;//add depth offset basded on slope
     //multisampling
-    VkPipelineMultisampleStateCreateInfo multisample = {0};
+    VkPipelineMultisampleStateCreateInfo multisample = {};
     multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisample.sampleShadingEnable = VK_FALSE;
     multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;//other members aren't touched, if enabling, we'll need to touch
     //blendAttach is the color blending settings per-framebuffer (we have 1 framebuffer, so we only need one)
-    VkPipelineColorBlendAttachmentState blendAttach = {0};
+    VkPipelineColorBlendAttachmentState blendAttach = {};
     blendAttach.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     blendAttach.blendEnable = VK_TRUE;
     //my copy pasta is exquisite
@@ -157,7 +196,7 @@ void CreateGraphicsPipeline(Device device,VkRenderPass renderPass,VkExtent2D vie
     blendAttach.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     blendAttach.alphaBlendOp = VK_BLEND_OP_ADD;
     //not to define blending constants for ALL framebuffers
-    VkPipelineColorBlendStateCreateInfo blendGlobal = {0};
+    VkPipelineColorBlendStateCreateInfo blendGlobal = {};
     blendGlobal.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     blendGlobal.logicOpEnable = VK_FALSE;//this was fucking with me thro validation layers
     blendGlobal.logicOp = VK_LOGIC_OP_COPY;//copy the blend effect to the framebuffer? (like not adding or something)
@@ -165,17 +204,9 @@ void CreateGraphicsPipeline(Device device,VkRenderPass renderPass,VkExtent2D vie
     blendGlobal.pAttachments = &blendAttach;
     //might need to add something if something breaks for blendGlobal...
     //where uniforms reside
-    //create the pipline layout
-    VkPipelineLayoutCreateInfo layoutInfo = {0};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    //a bunch of other info goes here later
-
-    if(vkCreatePipelineLayout(device.device,&layoutInfo,NULL,&shad->pipelineLayout) != VK_SUCCESS){
-        Error("    PipelineLayout\n");
-    }
 
     //create the graphics pipeline
-    VkGraphicsPipelineCreateInfo pipelineInfo = {0};
+    VkGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;//vertex and fragment I rekon
     pipelineInfo.pStages = shaderStages;
@@ -186,19 +217,21 @@ void CreateGraphicsPipeline(Device device,VkRenderPass renderPass,VkExtent2D vie
     pipelineInfo.pMultisampleState = &multisample;//one pass. i.e. disabled
     pipelineInfo.pColorBlendState = &blendGlobal;//how to combine a translucent surface and a opaque surface
 
-    pipelineInfo.layout = shad->pipelineLayout;
+    pipelineInfo.layout = layout;
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;//this is an index
 
     pipelineInfo.basePipelineIndex = -1;//we don't want to derive from another pipeline
 
-    if(vkCreateGraphicsPipelines(device.device,VK_NULL_HANDLE,1,&pipelineInfo,NULL,&shad->graphicsPipeline) != VK_SUCCESS){
+    VkPipeline result;
+    if(vkCreateGraphicsPipelines(device->device,VK_NULL_HANDLE,1,&pipelineInfo,NULL,&result) != VK_SUCCESS){
         Error("    Graphics Pipeline create failed\n");
     }
 
     // for(unsigned int i = 0;i < 2;i++){
     //     vkDestroyShaderModule(device,shaderModules[i],NULL);
     // }
+    return result;
 }
 
 
@@ -210,10 +243,10 @@ void CreateGraphicsPipeline(Device device,VkRenderPass renderPass,VkExtent2D vie
 //imageViews is an output arguments
 int CreateImageViews(VkDevice device,unsigned int imageCount,VkImage* images,VkSurfaceFormatKHR* imageFormat,VkImageView** imageViews){
 	if(imageCount > 0){
-		*imageViews = malloc(sizeof(VkImageView*)*imageCount);
+		*imageViews = (VkImageView*)malloc(sizeof(VkImageView)*imageCount);
 		for(unsigned int i =0;i < imageCount;i++){
 			//create the creation struct
-			VkImageViewCreateInfo imageInfo = {0};
+			VkImageViewCreateInfo imageInfo = {};
 			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			imageInfo.image = images[i];
 			//we are dealing with 2d things here
@@ -273,33 +306,35 @@ VkExtent2D Swap_GetBestSwapExtent(SwapChainSupportDetails* dets){
 		return dets->capabilities.currentExtent;
 	}else{
     	VkExtent2D actualExtent = {WIDTH,HEIGHT};
-    	actualExtent.width = min(max(dets->capabilities.minImageExtent.width,actualExtent.width), dets->capabilities.maxImageExtent.width);
-    	actualExtent.height = min(max(dets->capabilities.minImageExtent.height,actualExtent.height),dets->capabilities.maxImageExtent.height);
+    	actualExtent.width = std::min(std::max(dets->capabilities.minImageExtent.width,actualExtent.width), dets->capabilities.maxImageExtent.width);
+    	actualExtent.height = std::min(std::max(dets->capabilities.minImageExtent.height,actualExtent.height),dets->capabilities.maxImageExtent.height);
     	return actualExtent;
 	}
 }
 
-int CreateSwapChain(Device* devDets,VkSurfaceKHR surface, SwapChain* swapchain){
-	*swapchain = malloc(sizeof(struct SwapChain));
+// int CreateSwapChain(Device* devDets,VkSurfaceKHR surface, SwapChain* swapchain){
+SwapChain::SwapChain(Device* devDets,VkSurfaceKHR surface){
+	// *swapchain = malloc(sizeof(struct SwapChain));
 	//shortcuts
-	SwapChain deSwap = *swapchain;
+	// SwapChain deSwap = *swapchain;
+    this->device = devDets;
 	VkDevice device = devDets->device;
 	QueueFamilyIndex* famz = &devDets->families;
-    (*swapchain)->renderpassCount = 0;
+    // renderpassCount = 0;
 
-	deSwap->swapDets = &devDets->swapSupport;
-	deSwap->chosenFormat = Swap_GetBestSurfaceFormat(deSwap->swapDets);
-	deSwap->chosenPresent = Swap_GetBestPresentMode(deSwap->swapDets);
-	VkSurfaceFormatKHR* format = &(deSwap->swapDets->formats[deSwap->chosenFormat]);
-	VkPresentModeKHR present = deSwap->swapDets->presentModes[deSwap->chosenPresent];
-	VkExtent2D extent = Swap_GetBestSwapExtent(deSwap->swapDets);
+	swapDets = &devDets->swapSupport;
+	chosenFormat = Swap_GetBestSurfaceFormat(swapDets);
+	chosenPresent = Swap_GetBestPresentMode(swapDets);
+	VkSurfaceFormatKHR* format = &(swapDets->formats[chosenFormat]);
+	VkPresentModeKHR present = swapDets->presentModes[chosenPresent];
+	VkExtent2D extent = Swap_GetBestSwapExtent(swapDets);
 
-	unsigned int imageCount = deSwap->swapDets->capabilities.minImageCount + 1;
+	imageCount = swapDets->capabilities.minImageCount + 1;
 	//if maximage is 0, unlimited images; otherwise get the min of the two
-	if (deSwap->swapDets->capabilities.maxImageCount > 0 && imageCount > deSwap->swapDets->capabilities.maxImageCount) {
-		imageCount = deSwap->swapDets->capabilities.maxImageCount;
+	if (swapDets->capabilities.maxImageCount > 0 && imageCount > swapDets->capabilities.maxImageCount) {
+		imageCount = swapDets->capabilities.maxImageCount;
 	}
-	VkSwapchainCreateInfoKHR swapInfo = { 0 };
+	VkSwapchainCreateInfoKHR swapInfo = {};
 	swapInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	swapInfo.surface = surface;
 	swapInfo.minImageCount = imageCount;
@@ -321,7 +356,7 @@ int CreateSwapChain(Device* devDets,VkSurfaceKHR surface, SwapChain* swapchain){
 		swapInfo.pQueueFamilyIndices = indices;
 	}
 
-	swapInfo.preTransform = deSwap->swapDets->capabilities.currentTransform; // no applied transform
+	swapInfo.preTransform = swapDets->capabilities.currentTransform; // no applied transform
 	swapInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; //no alpha blending with other windows
 
 	swapInfo.presentMode = present;
@@ -329,23 +364,45 @@ int CreateSwapChain(Device* devDets,VkSurfaceKHR surface, SwapChain* swapchain){
 
 	swapInfo.oldSwapchain = VK_NULL_HANDLE;//for when we need to change the swapchain (like when we need to resize the window)
 
-	if(vkCreateSwapchainKHR(device,&swapInfo,NULL,&deSwap->swapChain) != VK_SUCCESS){
+	if(vkCreateSwapchainKHR(device,&swapInfo,NULL,&swapChain) != VK_SUCCESS){
 		Error("couldn't create a swap chain! oh no boo hoo.\n");
-		return 0;
 	}
 	//get the VkImages
-	deSwap->imageCount = 0;
-	vkGetSwapchainImagesKHR(device,deSwap->swapChain,&deSwap->imageCount,NULL);
-	deSwap->images = malloc(sizeof(VkImage)*deSwap->imageCount);
-	vkGetSwapchainImagesKHR(device,deSwap->swapChain,&deSwap->imageCount,deSwap->images);
-	if(deSwap->imageCount == 0){
+	imageCount = 0;
+	vkGetSwapchainImagesKHR(device,swapChain,&imageCount,NULL);
+	images = (VkImage*)malloc(sizeof(VkImage)*imageCount);
+	vkGetSwapchainImagesKHR(device,swapChain,&imageCount,images);
+	if(imageCount == 0){
 		Error("the swap chain has zero images!\n");
 	}
 
-	if(!CreateImageViews(device,deSwap->imageCount,deSwap->images,&deSwap->swapDets->formats[deSwap->chosenFormat],&deSwap->imageViews)){
+	if(!CreateImageViews(device,imageCount,images,&swapDets->formats[chosenFormat],&imageViews)){
 		Error("Couldn't create image views!\n");
-		return 0;
 	}
-	deSwap->swapExtent = extent;
-	return 1;
+	swapExtent = extent;
+}
+//untested
+void SwapChain::RegisterRenderPasses(std::initializer_list<VkRenderPass> renderpasses){
+    for(auto renderpass : renderpasses){
+        this->renderpasses.push_back(renderpass);
+        framebuffers.push_back(new std::vector<VkFramebuffer>(imageCount));
+        unsigned int imageIter = 0;
+
+        // for(auto f : (*framebuffers.back())){//doesn't work. why
+            for(std::vector<VkFramebuffer>::iterator f = framebuffers.back()->begin();f !=  framebuffers.back()->end();f++){
+            VkFramebufferCreateInfo frameInfo ={};
+			frameInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			frameInfo.renderPass = renderpass;//framebuffer must be compatible with this render pass. neat
+			frameInfo.attachmentCount = 1;
+			frameInfo.pAttachments = &imageViews[imageIter];
+			frameInfo.width = swapExtent.width;
+			frameInfo.height = swapExtent.height;
+			frameInfo.layers = 1;
+            if(vkCreateFramebuffer(device->device,&frameInfo,NULL,&(*f)) != VK_SUCCESS){
+				Error("    framebuffer create failed\n");
+				return;
+			}
+            imageIter++;
+        }
+    }
 }
