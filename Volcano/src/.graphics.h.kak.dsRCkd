@@ -11,18 +11,8 @@
 #include "commandpool.h"
 // #include "window.h"
 #include "devices.h"
-#define MAX_FRAMES_IN_FLIGHT 2
-
+// typedef struct{} *SwapChain;
 struct SwapChain;
-struct Command{
-	SwapChain* swapchain;
-	VkPipeline graphicsPipeline;
-	std::vector<VkCommandBuffer>* drawCommands;
-
-	std::vector<VkSemaphore> available;
-	std::vector<VkSemaphore> presentable;
-};
-
 struct Shader{
 	Device* device;
 	VkRenderPass renderpass;
@@ -32,21 +22,19 @@ struct Shader{
 	VkShaderModule* shadMods;
 	unsigned int shadModCount;
 
+	std::list<SwapChain*> swapchains;
+	std::list<VkPipeline> graphicsPipelines;// VkPipline
 	VkCommandPool cmdPool;
-	std::list<Command*> commands;
+	std::list<std::vector<VkCommandBuffer>*> drawCommands;//list of an array of VkCommandBuffers
+	std::list<
 
 	Shader(Device* device,VkRenderPass renderpass, SwapChain* swap,const char* vertexShader,const char* fragmentShader);
-	~Shader();
 	void RegisterSwapChains(std::initializer_list<SwapChain*> swaps);
-	void DrawFrame(SwapChain* window);
+	void DrawFrame(Window* window);
 	void RemoveSwapChain();//need to be done
 	void RecalculateSwapChain();//need to be done
 };
 
-struct Framebuffer{
-	VkRenderPass renderpasses;
-	std::vector<VkFramebuffer>* framebuffers;
-};
 
 struct SwapChain{
 	Device* device;
@@ -63,7 +51,10 @@ struct SwapChain{
 	VkImageView* imageViews;
 
 	std::list<Shader*> shaders;//shaders to recreate on recreation
-	std::list<Framebuffer*> frames;
+
+	std::list<VkRenderPass> renderpasses;
+	std::list<std::vector<VkFramebuffer>*> framebuffers;
+
 	SwapChain(Device* device,VkSurfaceKHR surface);
 	void RegisterRenderPasses(std::initializer_list<VkRenderPass> renderpasses);
 	void RecalcuateRenderPasses();

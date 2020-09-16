@@ -20,5 +20,5 @@
 //our globals --- declared in globalVulkan.h
 
 //maximum number of frames being calclated on the GPU at one time (all on different stages)
-#define MAX_FRAMES_IN_FLIGHT 2
+// #define MAX_FRAMES_IN_FLIGHT 2
 

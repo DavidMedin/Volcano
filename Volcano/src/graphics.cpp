@@ -1,4 +1,6 @@
 #include "graphics.h"
+
+
 //ReadFile("path/to/file.txt",&(char*)buff,&(size_t)buffSize);
 int ReadTheFile(const char* path,char** buff,unsigned int* buffSize){
     //init the file
@@ -56,45 +58,89 @@ Shader::Shader(Device* device,VkRenderPass renderpass, SwapChain* swap,const cha
 }
 void Shader::RegisterSwapChains(std::initializer_list<SwapChain*> swaps){
     for(auto swap : swaps){
-        swapchains.push_back(swap);
-        graphicsPipelines.push_back(CreateGraphicsPipeline(device,pipelineLayout,renderpass,swap->swapExtent,this));
-        drawCommands.push_back(CreateCommandBuffers(device,cmdPool,swap->imageCount));
+        Command* tmpCmd = new Command;
+        tmpCmd->swapchain = swap;
+        tmpCmd->graphicsPipeline = CreateGraphicsPipeline(device,pipelineLayout,renderpass,swap->swapExtent,this);
+        tmpCmd->drawCommands = CreateCommandBuffers(device,cmdPool,swap->imageCount);
+
         //find the framebuffers that releate to our renderpass
-        auto iter = swap->renderpasses.begin();
-        auto frameIter = swap->framebuffers.begin();
-        for(unsigned int i = 0;iter != swap->renderpasses.end();i++){
-            if(*iter == renderpass) {
-                std::advance(frameIter,i);//TEST ITTTTT
-                break;
+        // auto iter = swap->renderpasses.begin();
+        // auto frameIter = swap->framebuffers.begin();
+        // for(unsigned int i = 0;iter != swap->renderpasses.end();i++){
+        //     if(*iter == renderpass) {
+        //         std::advance(frameIter,i);//TEST ITTTTT
+        //         break;
+        //     }
+        //     iter++;
+        // }
+        // if(*iter != renderpass){
+        //     Error("something went wrong in the for loop!\n");
+        // }
+        // //framebuffers are empty?
+/*
+            |
+            |
+           \|/
+
+*/
+        for(auto frame : swap->frames){
+            if(frame->renderpasses == renderpass){
+                FillCommandBuffers(swap->swapExtent,frame->framebuffers,tmpCmd->graphicsPipeline,renderpass,tmpCmd->drawCommands);
             }
-            iter++;
         }
-        if(*iter != renderpass){
-            Error("something went wrong in the for loop!\n");
-        }
-        //framebuffers are empty?
-        FillCommandBuffers(swap->swapExtent,*frameIter,graphicsPipelines.back(),renderpass,drawCommands.back());
+
         swap->shaders.push_back(this);
+        for(unsigned int i = 0;i < MAX_FRAMES_IN_FLIGHT;i++){
+            CreateSemaphore(device->device,&(tmpCmd->available[i]));
+            CreateSemaphore(device->device,&(tmpCmd->presentable[i]));
+        }
+        commands.push_back(tmpCmd);
     }
 }
-// void CreateShader(Device device,VkRenderPass renderpass, SwapChain* swap, VkShaderModule vertexShader,VkShaderModule fragmentShader, Shader* shad){
-//      *shad = malloc(sizeof(struct Shader));
-//     Shader deShad = *shad;
 
-//     deShad->shadModCount = 2;
-//     deShad->shadMods = malloc(sizeof(VkShaderModule));
-//     deShad->shadMods[0] = vertexShader;
-//     deShad->shadMods[1] = fragmentShader;
+void Shader::DrawFrame(SwapChain* swap){
+    static unsigned int nextFrame = 0;
+    for(auto targetCommands : commands){
+        if(targetCommands->swapchain == swap){
+            unsigned int imageIndex;
+            vkAcquireNextImageKHR(device->device,swap->swapChain,UINT64_MAX,targetCommands->available[nextFrame],nullptr,&imageIndex);
 
-//     CreateGraphicsPipeline(device,renderpass,swap->swapExtent,deShad);
-// }
+            VkSubmitInfo submitInfo = {};
+            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+            submitInfo.waitSemaphoreCount = 1;
+            submitInfo.pWaitSemaphores = &targetCommands->available[nextFrame];
+            submitInfo.pWaitDstStageMask = waitStages;
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = &(*targetCommands->drawCommands)[imageIndex];
+            submitInfo.signalSemaphoreCount = 1;
+            submitInfo.pSignalSemaphores = &targetCommands->presentable[nextFrame];
+            if(vkQueueSubmit(device->queues[0],1,&submitInfo,nullptr) != VK_SUCCESS){
+                Error("Couldn't send command buffer to graphics queue\n");
+            }
 
-void DestroyShader(Device* device, Shader* shad){
-    for(unsigned int i = 0; i < shad->shadModCount;i++){
-        vkDestroyShaderModule(device->device,shad->shadMods[i],NULL);
+            VkPresentInfoKHR presentInfo = {};
+            presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+            presentInfo.waitSemaphoreCount = 1;
+            presentInfo.pWaitSemaphores = &targetCommands->presentable[nextFrame];
+            presentInfo.swapchainCount = 1;//whaaaatttt?
+            presentInfo.pSwapchains = &swap->swapChain;
+            presentInfo.pImageIndices = &imageIndex;//????
+            vkQueuePresentKHR(device->queues[1],&presentInfo);
+            
+            nextFrame = (nextFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+            return;
+        }
+    }
+}
+
+
+Shader::~Shader(){
+    for(unsigned int i = 0; i < shadModCount;i++){
+        vkDestroyShaderModule(device->device,shadMods[i],NULL);
     }
     // vkDestroyPipeline(device.device,shad->graphicsPipeline,NULL);//hold that though
-	vkDestroyPipelineLayout(device->device,shad->pipelineLayout,NULL);
+	vkDestroyPipelineLayout(device->device,pipelineLayout,NULL);
 }
 
 VkPipelineLayout CreatePipeLayout(Device* device){
@@ -384,25 +430,26 @@ SwapChain::SwapChain(Device* devDets,VkSurfaceKHR surface){
 //untested
 void SwapChain::RegisterRenderPasses(std::initializer_list<VkRenderPass> renderpasses){
     for(auto renderpass : renderpasses){
-        this->renderpasses.push_back(renderpass);
-        framebuffers.push_back(new std::vector<VkFramebuffer>(imageCount));
-        unsigned int imageIter = 0;
+        Framebuffer* tmpFrame = new Framebuffer;
+        // this->renderpasses.push_back(renderpass);
+        tmpFrame->framebuffers = new std::vector<VkFramebuffer>(imageCount);
 
-        // for(auto f : (*framebuffers.back())){//doesn't work. why
-            for(std::vector<VkFramebuffer>::iterator f = framebuffers.back()->begin();f !=  framebuffers.back()->end();f++){
+        for(unsigned int i = 0; i < imageCount;i++){
+            VkFramebuffer frame;
             VkFramebufferCreateInfo frameInfo ={};
 			frameInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			frameInfo.renderPass = renderpass;//framebuffer must be compatible with this render pass. neat
 			frameInfo.attachmentCount = 1;
-			frameInfo.pAttachments = &imageViews[imageIter];
+			frameInfo.pAttachments = &imageViews[i];
 			frameInfo.width = swapExtent.width;
 			frameInfo.height = swapExtent.height;
 			frameInfo.layers = 1;
-            if(vkCreateFramebuffer(device->device,&frameInfo,NULL,&(*f)) != VK_SUCCESS){
+            if(vkCreateFramebuffer(device->device,&frameInfo,NULL,&frame) != VK_SUCCESS){
 				Error("    framebuffer create failed\n");
 				return;
 			}
-            imageIter++;
+            (*tmpFrame->framebuffers)[i] = frame;
         }
+        frames.push_back(tmpFrame);
     }
 }

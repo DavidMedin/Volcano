@@ -28,20 +28,20 @@ Shader* shad;
 VkRenderPass renderPass;
 // VkPipeline graphicsPipeline;
 
-VkFramebuffer* framebuffers;
-unsigned int framebufferCount;//should equal DeviceDetails.swapChain->imageCount
+// VkFramebuffer* framebuffers;
+// unsigned int framebufferCount;//should equal DeviceDetails.swapChain->imageCount
 
-VkCommandPool commandPool;//used to optimize the memory of the command buffers
-VkCommandBuffer* commandBuffers;//one for each framebuffer
-unsigned int commandBufferCount;//should equal framebufferCount
+// VkCommandPool commandPool;//used to optimize the memory of the command buffers
+// VkCommandBuffer* commandBuffers;//one for each framebuffer
+// unsigned int commandBufferCount;//should equal framebufferCount
 
-//used to organize the drawing and presenting of a single frame
-VkSemaphore* imageDrawReady;//semaphores are for GPU-GPU sync
-VkSemaphore* imagePrezReady;
-VkFence* inFlightFences;//fences are like semaphores but can be queryed
-VkFence* swapImageFence;//same count as swapchain images, will contain a valid pointer if it is in use (and contains the pointer to a valid vkfence(one of the 2 inflightfences))
-unsigned int semaphoreCount = MAX_FRAMES_IN_FLIGHT;
-unsigned int nextFrame = 0;
+// //used to organize the drawing and presenting of a single frame
+// VkSemaphore* imageDrawReady;//semaphores are for GPU-GPU sync
+// VkSemaphore* imagePrezReady;
+// VkFence* inFlightFences;//fences are like semaphores but can be queryed
+// VkFence* swapImageFence;//same count as swapchain images, will contain a valid pointer if it is in use (and contains the pointer to a valid vkfence(one of the 2 inflightfences))
+// unsigned int semaphoreCount = MAX_FRAMES_IN_FLIGHT;
+// unsigned int nextFrame = 0;
 
 
 
@@ -136,7 +136,8 @@ int main() {
 
 	shad = new Shader(device,renderPass,window->swapchain,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
 	shad->RegisterSwapChains({window->swapchain});
-	
+
+
 	
 	//create a command pool (stores the command buffers more efficently)
 	// if(!CreateCommandPool(device->device,&(device->families),&commandPool)){
@@ -175,7 +176,7 @@ int main() {
 	//game loop
 	while (!glfwWindowShouldClose(window->window)) {
 		glfwPollEvents();
-		// DrawFrame();
+		//DrawFrame(window,shader,vertexBuffer);
 	}
 	Shutdown();
 	return 0;
