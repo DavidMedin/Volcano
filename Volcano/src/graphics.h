@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <vector>
+#include <memory>
 
 #include <vulkan/vulkan.h>
 
@@ -11,16 +12,18 @@
 #include "commandpool.h"
 // #include "window.h"
 #include "devices.h"
-#define MAX_FRAMES_IN_FLIGHT 2
+#define MAX_FRAMES_IN_FLIGHT 4
 
 struct SwapChain;
 struct Command{
 	SwapChain* swapchain;
 	VkPipeline graphicsPipeline;
 	std::vector<VkCommandBuffer>* drawCommands;
+	std::vector<VkFence> imageFence;
 
 	std::vector<VkSemaphore> available;
 	std::vector<VkSemaphore> presentable;
+	std::vector<VkFence> fences;
 };
 
 struct Shader{
@@ -44,7 +47,7 @@ struct Shader{
 };
 
 struct Framebuffer{
-	VkRenderPass renderpasses;
+	VkRenderPass renderpasses;//shared_ptr
 	std::vector<VkFramebuffer>* framebuffers;
 };
 
@@ -65,6 +68,7 @@ struct SwapChain{
 	std::list<Shader*> shaders;//shaders to recreate on recreation
 	std::list<Framebuffer*> frames;
 	SwapChain(Device* device,VkSurfaceKHR surface);
+	~SwapChain();
 	void RegisterRenderPasses(std::initializer_list<VkRenderPass> renderpasses);
 	void RecalcuateRenderPasses();
 };

@@ -73,7 +73,7 @@ void DestoryWindow(Device* device, Window* window){
     for(unsigned int i = 0;i < window->swapchain->imageCount;i++){
         vkDestroyImageView(device->device,window->swapchain->imageViews[i],NULL);
     }
-	vkDestroySwapchainKHR(device->device,window->swapchain->swapChain,NULL);
+    delete window->swapchain;
     vkDestroyDevice(device->device,NULL);
     //destroy VkSurfaceKHR
     vkDestroySurfaceKHR(instance->instance,window->surface,NULL);

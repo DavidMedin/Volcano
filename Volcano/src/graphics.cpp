@@ -63,26 +63,6 @@ void Shader::RegisterSwapChains(std::initializer_list<SwapChain*> swaps){
         tmpCmd->graphicsPipeline = CreateGraphicsPipeline(device,pipelineLayout,renderpass,swap->swapExtent,this);
         tmpCmd->drawCommands = CreateCommandBuffers(device,cmdPool,swap->imageCount);
 
-        //find the framebuffers that releate to our renderpass
-        // auto iter = swap->renderpasses.begin();
-        // auto frameIter = swap->framebuffers.begin();
-        // for(unsigned int i = 0;iter != swap->renderpasses.end();i++){
-        //     if(*iter == renderpass) {
-        //         std::advance(frameIter,i);//TEST ITTTTT
-        //         break;
-        //     }
-        //     iter++;
-        // }
-        // if(*iter != renderpass){
-        //     Error("something went wrong in the for loop!\n");
-        // }
-        // //framebuffers are empty?
-/*
-            |
-            |
-           \|/
-
-*/
         for(auto frame : swap->frames){
             if(frame->renderpasses == renderpass){
                 FillCommandBuffers(swap->swapExtent,frame->framebuffers,tmpCmd->graphicsPipeline,renderpass,tmpCmd->drawCommands);
@@ -90,9 +70,14 @@ void Shader::RegisterSwapChains(std::initializer_list<SwapChain*> swaps){
         }
 
         swap->shaders.push_back(this);
+        tmpCmd->imageFence.resize(swap->imageCount,VK_NULL_HANDLE);
+        tmpCmd->available.resize(MAX_FRAMES_IN_FLIGHT);
+        tmpCmd->presentable.resize(MAX_FRAMES_IN_FLIGHT);
+        tmpCmd->fences.resize(MAX_FRAMES_IN_FLIGHT);
         for(unsigned int i = 0;i < MAX_FRAMES_IN_FLIGHT;i++){
             CreateSemaphore(device->device,&(tmpCmd->available[i]));
             CreateSemaphore(device->device,&(tmpCmd->presentable[i]));
+            CreateFence(device->device,&(tmpCmd->fences[i]));
         }
         commands.push_back(tmpCmd);
     }
@@ -102,8 +87,18 @@ void Shader::DrawFrame(SwapChain* swap){
     static unsigned int nextFrame = 0;
     for(auto targetCommands : commands){
         if(targetCommands->swapchain == swap){
+            vkWaitForFences(device->device,1,&targetCommands->fences[nextFrame],VK_TRUE,UINT64_MAX);
+            // vkResetFences(device->device,1,&targetCommands->fences[nextFrame]);
+
             unsigned int imageIndex;
             vkAcquireNextImageKHR(device->device,swap->swapChain,UINT64_MAX,targetCommands->available[nextFrame],nullptr,&imageIndex);
+
+            if(targetCommands->imageFence[imageIndex] != VK_NULL_HANDLE){
+                vkWaitForFences(device->device,1,&targetCommands->imageFence[imageIndex],VK_TRUE,UINT64_MAX);
+            }
+            vkResetFences(device->device,1,&targetCommands->fences[nextFrame]);
+            targetCommands->imageFence[imageIndex] = targetCommands->fences[nextFrame];
+
 
             VkSubmitInfo submitInfo = {};
             submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -115,7 +110,7 @@ void Shader::DrawFrame(SwapChain* swap){
             submitInfo.pCommandBuffers = &(*targetCommands->drawCommands)[imageIndex];
             submitInfo.signalSemaphoreCount = 1;
             submitInfo.pSignalSemaphores = &targetCommands->presentable[nextFrame];
-            if(vkQueueSubmit(device->queues[0],1,&submitInfo,nullptr) != VK_SUCCESS){
+            if(vkQueueSubmit(device->queues[0],1,&submitInfo,targetCommands->fences[nextFrame]) != VK_SUCCESS){
                 Error("Couldn't send command buffer to graphics queue\n");
             }
 
@@ -125,9 +120,9 @@ void Shader::DrawFrame(SwapChain* swap){
             presentInfo.pWaitSemaphores = &targetCommands->presentable[nextFrame];
             presentInfo.swapchainCount = 1;//whaaaatttt?
             presentInfo.pSwapchains = &swap->swapChain;
-            presentInfo.pImageIndices = &imageIndex;//????
+            presentInfo.pImageIndices = &imageIndex;
             vkQueuePresentKHR(device->queues[1],&presentInfo);
-            
+            // vkQueueWaitIdle(device->queues[1]);
             nextFrame = (nextFrame + 1) % MAX_FRAMES_IN_FLIGHT;
             return;
         }
@@ -139,8 +134,16 @@ Shader::~Shader(){
     for(unsigned int i = 0; i < shadModCount;i++){
         vkDestroyShaderModule(device->device,shadMods[i],NULL);
     }
-    // vkDestroyPipeline(device.device,shad->graphicsPipeline,NULL);//hold that though
+    vkDestroyCommandPool(device->device,cmdPool,NULL);
 	vkDestroyPipelineLayout(device->device,pipelineLayout,NULL);
+    for(auto command : commands){
+        vkDestroyPipeline(device->device,command->graphicsPipeline,NULL);
+        for(unsigned int i = 0;i < MAX_FRAMES_IN_FLIGHT;i++){
+            vkDestroySemaphore(device->device,command->available[i],NULL);
+            vkDestroySemaphore(device->device,command->presentable[i],NULL);
+            vkDestroyFence(device->device,command->fences[i],NULL);
+        }
+    }
 }
 
 VkPipelineLayout CreatePipeLayout(Device* device){
@@ -427,11 +430,20 @@ SwapChain::SwapChain(Device* devDets,VkSurfaceKHR surface){
 	}
 	swapExtent = extent;
 }
-//untested
+SwapChain::~SwapChain(){
+    vkDestroySwapchainKHR(device->device,swapChain,NULL);
+    for(auto frame : frames){
+        for(auto framebuffer : *frame->framebuffers){
+            vkDestroyFramebuffer(device->device,framebuffer,NULL);
+        }
+    }
+}
+
 void SwapChain::RegisterRenderPasses(std::initializer_list<VkRenderPass> renderpasses){
     for(auto renderpass : renderpasses){
         Framebuffer* tmpFrame = new Framebuffer;
         // this->renderpasses.push_back(renderpass);
+        tmpFrame->renderpasses = renderpass;
         tmpFrame->framebuffers = new std::vector<VkFramebuffer>(imageCount);
 
         for(unsigned int i = 0; i < imageCount;i++){
