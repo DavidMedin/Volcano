@@ -19,8 +19,9 @@ struct Window{
     VkSurfaceKHR surface;
 	SwapChain* swapchain;
 	// DeviceDetails devDets;
-	Window(const char* windowName,Device** device);
+	Window(const char* windowName,Device* device);
 };
+void InitVolcano();
 int InitGLFW();
 void DestroyGLFW();
 // void CreateWindow(const char* windowName,Instance* instance,Device* device, Window* pWindow);

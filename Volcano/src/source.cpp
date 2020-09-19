@@ -16,7 +16,9 @@ void Shutdown() {
 }
 
 int main() {
-	window = new Window("TestWindow",&device);
+	InitVolcano();
+	device = new Device();
+	window = new Window("TestWindow",device);
 
 	CreateRenderPass(window,device,&renderPass);
 	window->swapchain->RegisterRenderPasses({renderPass});

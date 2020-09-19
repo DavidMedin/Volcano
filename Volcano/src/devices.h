@@ -1,4 +1,7 @@
 #pragma once
+#define GLFW_INCLUDE_VULKAN
+#include "GLFW/glfw3.h"
+
 #include "globalVulkan.h"
 #include "instance.h"
 #include "errorCatch.h"
@@ -40,6 +43,7 @@ struct Device{
 	// unsigned int queueCount;
 	QueueFamilyIndex families;
 	Device(VkSurfaceKHR surface);
+	Device();
 };
 
 // int CreateDevice(VkInstance instance,VkSurfaceKHR surface, Device* dets);

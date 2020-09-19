@@ -263,3 +263,73 @@ Device::Device(VkSurfaceKHR surface) {
 	// }	
 
 }
+
+Device::Device(){
+	VkInstance instance = GetCurrentInstance()->instance;
+	glfwWindowHint(GLFW_VISIBLE,GLFW_FALSE);
+	GLFWwindow* dummy = glfwCreateWindow(WIDTH,HEIGHT,"Dummy",NULL,NULL);
+	glfwWindowHint(GLFW_VISIBLE,GLFW_TRUE);
+	VkSurfaceKHR surface;
+	if (glfwCreateWindowSurface(GetCurrentInstance()->instance, dummy, NULL, &surface)!=VK_SUCCESS) {
+		Error("Couldn't create a surface!\n");
+	}
+	if (!GetPhysicalDevice(instance,surface,this)) {
+		return;
+	}
+	//Creating a graphics logical device-------------------------------------
+	//create info about queues to be created
+	float priorities = 1.0f;//everything might just be 1
+
+	VkDeviceQueueCreateInfo* queueInfos = (VkDeviceQueueCreateInfo*)malloc(sizeof(VkDeviceQueueCreateInfo) * families.familyCount);
+	unsigned int nextIndex = 0;
+	if (families.exists & GRAPHICS_BIT) {
+		queueInfos[nextIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueInfos[nextIndex].queueFamilyIndex = families.graphics;
+		queueInfos[nextIndex].queueCount = 1;
+		queueInfos[nextIndex].pQueuePriorities = &priorities;//this can be an array in the future
+		queueInfos[nextIndex].pNext = NULL;
+		queueInfos[nextIndex].flags = 0;
+		nextIndex++;
+	}
+	//-------------------------
+	if (families.exists & PRESENTATION_BIT && families.graphics != families.presentation) {
+		queueInfos[nextIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueInfos[nextIndex].queueFamilyIndex = families.presentation;
+		queueInfos[nextIndex].queueCount = 1;
+		queueInfos[nextIndex].pQueuePriorities = &priorities;//this can be an array in the future
+		queueInfos[nextIndex].pNext = NULL;
+		queueInfos[nextIndex].flags = 0;
+		nextIndex++;
+	}
+	//create info about the features to be enabled in the device (like geometry shaders)
+	VkPhysicalDeviceFeatures deviceFeatures = { 0 };//we'll leave this empty until we need a specific feature
+
+	//create device info
+	VkDeviceCreateInfo deviceInfo;
+	deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+	if (enableValidationLayers) {//give it the validation layers. will be ignored in recent Vulkan versions tho
+		unsigned int layerCount = 0;
+		const char** layers = GetInstanceValidationLayers(&layerCount);
+		deviceInfo.ppEnabledLayerNames = layers;
+		deviceInfo.enabledLayerCount = layerCount;
+	}
+	else deviceInfo.enabledLayerCount = 0;
+	deviceInfo.enabledExtensionCount = 1;
+	deviceInfo.ppEnabledExtensionNames = requiredDeviceExtensions;
+	deviceInfo.pEnabledFeatures = NULL;
+	deviceInfo.queueCreateInfoCount = families.familyCount;//when we add more queues we need to inc this
+	deviceInfo.pQueueCreateInfos = queueInfos;
+	deviceInfo.flags = 0;
+	deviceInfo.pNext = NULL;
+	if (vkCreateDevice(phyDev, &deviceInfo, NULL, &(device)) != VK_SUCCESS) {
+		Error("Couldn't create a logical device. oh no\n");
+	}
+
+
+	vkGetDeviceQueue(device, families.graphics, 0, &(queues[0]));//3rd argument is the 0th queue of the queue family
+	vkGetDeviceQueue(device, families.presentation, 0, &(queues[1]));
+	vkDestroySurfaceKHR(instance,surface,NULL);
+    //destroy GLFWwindow
+    glfwDestroyWindow(dummy);
+}
