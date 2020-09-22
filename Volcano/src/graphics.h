@@ -43,7 +43,7 @@ struct Shader{
 	void RegisterSwapChains(std::initializer_list<SwapChain*> swaps);
 	void DrawFrame(SwapChain* window);
 	void RemoveSwapChain();//need to be done
-	void RecalculateSwapChain();//need to be done
+	void RecalculateSwapchain(SwapChain* swap);
 };
 
 struct Framebuffer{
@@ -54,8 +54,9 @@ struct Framebuffer{
 struct SwapChain{
 	Device* device;
 	VkSwapchainKHR swapChain;
+	VkSurfaceKHR surface;
 	//indices into swapDets.formats and presentModes
-	SwapChainSupportDetails* swapDets;
+	SwapChainSupportDetails swapDets;
 	VkExtent2D swapExtent;
 	unsigned int chosenFormat;
 	unsigned int chosenPresent;
@@ -70,6 +71,7 @@ struct SwapChain{
 	SwapChain(Device* device,VkSurfaceKHR surface);
 	~SwapChain();
 	void RegisterRenderPasses(std::initializer_list<VkRenderPass> renderpasses);
+	void Recreate();
 	void RecalcuateRenderPasses();
 };
 

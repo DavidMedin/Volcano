@@ -37,12 +37,12 @@ struct Device{
 	VkPhysicalDeviceProperties phyProps;
 
 	VkDevice device;
-	SwapChainSupportDetails swapSupport;
+	// SwapChainSupportDetails swapSupport;
 
 	VkQueue queues[2];//[0] = graphics, [1] = presentation
 	// unsigned int queueCount;
 	QueueFamilyIndex families;
-	Device(VkSurfaceKHR surface);
+	Device(VkSurfaceKHR surface,SwapChainSupportDetails* swapDets);
 	Device();
 };
 

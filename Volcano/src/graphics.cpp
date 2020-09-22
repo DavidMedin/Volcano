@@ -146,6 +146,10 @@ Shader::~Shader(){
     }
 }
 
+void Shader::RecalculateSwapchain(SwapChain* swap){
+
+}
+
 VkPipelineLayout CreatePipeLayout(Device* device){
     //create the pipline layout
     VkPipelineLayout pipelineLayout;
@@ -350,43 +354,39 @@ unsigned int Swap_GetBestPresentMode(SwapChainSupportDetails* dets){
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D Swap_GetBestSwapExtent(SwapChainSupportDetails* dets){
+VkExtent2D Swap_GetBestSwapExtent(SwapChainSupportDetails* dets,unsigned int targWidth,unsigned int targHeight){
 	if(dets->capabilities.currentExtent.width != UINT32_MAX){
 		return dets->capabilities.currentExtent;
 	}else{
-    	VkExtent2D actualExtent = {WIDTH,HEIGHT};
+    	VkExtent2D actualExtent = {targWidth,targHeight};
     	actualExtent.width = std::min(std::max(dets->capabilities.minImageExtent.width,actualExtent.width), dets->capabilities.maxImageExtent.width);
     	actualExtent.height = std::min(std::max(dets->capabilities.minImageExtent.height,actualExtent.height),dets->capabilities.maxImageExtent.height);
     	return actualExtent;
 	}
 }
 
-// int CreateSwapChain(Device* devDets,VkSurfaceKHR surface, SwapChain* swapchain){
-SwapChain::SwapChain(Device* devDets,VkSurfaceKHR surface){
-	// *swapchain = malloc(sizeof(struct SwapChain));
-	//shortcuts
-	// SwapChain deSwap = *swapchain;
-    this->device = devDets;
-	VkDevice device = devDets->device;
+void RecreateSwapchain(Device* devDets,VkSurfaceKHR surface,SwapChain* swap){
+    VkDevice device = devDets->device;
 	QueueFamilyIndex* famz = &devDets->families;
     // renderpassCount = 0;
+    if(!IsDeviceCompatible(swap->device->phyDev,surface,swap->device->phyProps,&swap->device->families,&swap->swapDets)){
+        Error("This surface doesn't comply with the picked device. wack\n");
+    }
+	swap->chosenFormat = Swap_GetBestSurfaceFormat(&swap->swapDets);
+	swap->chosenPresent = Swap_GetBestPresentMode(&swap->swapDets);
+	VkSurfaceFormatKHR* format = &(swap->swapDets.formats[swap->chosenFormat]);
+	VkPresentModeKHR present = swap->swapDets.presentModes[swap->chosenPresent];
+	VkExtent2D extent = Swap_GetBestSwapExtent(&swap->swapDets,WIDTH,HEIGHT);
 
-	swapDets = &devDets->swapSupport;
-	chosenFormat = Swap_GetBestSurfaceFormat(swapDets);
-	chosenPresent = Swap_GetBestPresentMode(swapDets);
-	VkSurfaceFormatKHR* format = &(swapDets->formats[chosenFormat]);
-	VkPresentModeKHR present = swapDets->presentModes[chosenPresent];
-	VkExtent2D extent = Swap_GetBestSwapExtent(swapDets);
-
-	imageCount = swapDets->capabilities.minImageCount + 1;
+	swap->imageCount = swap->swapDets.capabilities.minImageCount + 1;
 	//if maximage is 0, unlimited images; otherwise get the min of the two
-	if (swapDets->capabilities.maxImageCount > 0 && imageCount > swapDets->capabilities.maxImageCount) {
-		imageCount = swapDets->capabilities.maxImageCount;
+	if (swap->swapDets.capabilities.maxImageCount > 0 && swap->imageCount > swap->swapDets.capabilities.maxImageCount) {
+		swap->imageCount = swap->swapDets.capabilities.maxImageCount;
 	}
 	VkSwapchainCreateInfoKHR swapInfo = {};
 	swapInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	swapInfo.surface = surface;
-	swapInfo.minImageCount = imageCount;
+	swapInfo.minImageCount = swap->imageCount;
 	swapInfo.imageFormat = format->format;
 	swapInfo.imageColorSpace = format->colorSpace;
 	swapInfo.imageExtent = extent;
@@ -405,7 +405,7 @@ SwapChain::SwapChain(Device* devDets,VkSurfaceKHR surface){
 		swapInfo.pQueueFamilyIndices = indices;
 	}
 
-	swapInfo.preTransform = swapDets->capabilities.currentTransform; // no applied transform
+	swapInfo.preTransform = swap->swapDets.capabilities.currentTransform; // no applied transform
 	swapInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; //no alpha blending with other windows
 
 	swapInfo.presentMode = present;
@@ -413,22 +413,29 @@ SwapChain::SwapChain(Device* devDets,VkSurfaceKHR surface){
 
 	swapInfo.oldSwapchain = VK_NULL_HANDLE;//for when we need to change the swapchain (like when we need to resize the window)
 
-	if(vkCreateSwapchainKHR(device,&swapInfo,NULL,&swapChain) != VK_SUCCESS){
+	if(vkCreateSwapchainKHR(device,&swapInfo,NULL,&swap->swapChain) != VK_SUCCESS){
 		Error("couldn't create a swap chain! oh no boo hoo.\n");
 	}
-	//get the VkImages
+
+	swap->swapExtent = extent;
+}
+
+// int CreateSwapChain(Device* devDets,VkSurfaceKHR surface, SwapChain* swapchain){
+SwapChain::SwapChain(Device* devDets,VkSurfaceKHR surface){
+    this->device = devDets;
+	RecreateSwapchain(devDets,surface,this);
+    //get the VkImages
 	imageCount = 0;
-	vkGetSwapchainImagesKHR(device,swapChain,&imageCount,NULL);
+	vkGetSwapchainImagesKHR(device->device,swapChain,&imageCount,NULL);
 	images = (VkImage*)malloc(sizeof(VkImage)*imageCount);
-	vkGetSwapchainImagesKHR(device,swapChain,&imageCount,images);
+	vkGetSwapchainImagesKHR(device->device,swapChain,&imageCount,images);
 	if(imageCount == 0){
 		Error("the swap chain has zero images!\n");
 	}
 
-	if(!CreateImageViews(device,imageCount,images,&swapDets->formats[chosenFormat],&imageViews)){
+	if(!CreateImageViews(device->device,imageCount,images,&swapDets.formats[chosenFormat],&imageViews)){
 		Error("Couldn't create image views!\n");
 	}
-	swapExtent = extent;
 }
 SwapChain::~SwapChain(){
     vkDestroySwapchainKHR(device->device,swapChain,NULL);
@@ -438,6 +445,28 @@ SwapChain::~SwapChain(){
         }
     }
 }
+
+
+void SwapChain::Recreate(){
+    vkDeviceWaitIdle(device->device);
+    //create new swapchain
+    vkDestroySwapchainKHR(device->device,swapChain,NULL);
+    //destroy image views
+    for(unsigned int i = 0; i < imageCount;i++){
+        vkDestroyImageView(device->device,imageViews[i],NULL);
+    }
+    RecreateSwapchain(device,surface,this);
+    //create image views
+    if(!CreateImageViews(device->device,imageCount,images,&swapDets.formats[chosenFormat],&imageViews)){
+		Error("Couldn't create image views!\n");
+	}
+
+    //renderpass refresh
+    //need lists of like render passes in format with different shader specs
+    //each shader and struct framebuffer is attached to a list of those render passes
+    //when refreshing swapchain check if shader spec and format is already existing and use that rather than creating a new one
+}
+
 
 void SwapChain::RegisterRenderPasses(std::initializer_list<VkRenderPass> renderpasses){
     for(auto renderpass : renderpasses){

@@ -135,8 +135,7 @@ int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDe
 
 //inputs an instance and a physical device shell
 //returns a physical device thru that shell and queue family info on that device
-int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,Device* devDets) { // graphics card for example
-	SwapChainSupportDetails* swapDets = &devDets->swapSupport;
+int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,Device* devDets,SwapChainSupportDetails* swapDets) { // graphics card for example
 	unsigned int deviceCount = 0;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, NULL);//query the num of devices found
 	if (deviceCount == 0) {
@@ -178,7 +177,7 @@ int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,Device* devDets) 
 	vkGetPhysicalDeviceProperties(deviceList[bestIndex], &props);//we could just save the best but whatever
 	// SwapChainSupportDetails* tmpSupDets;
 	// QueueFamilyIndex* tmpFam;
-	IsDeviceCompatible(deviceList[bestIndex],surface,props,&devDets->families,&devDets->swapSupport);
+	IsDeviceCompatible(deviceList[bestIndex],surface,props,&devDets->families,swapDets);
 	// devDets->swapSupport = *tmpSupDets;
 	// devDets->families = *tmpFam;
 	// free(tmpSupDets);
@@ -199,9 +198,9 @@ int GetPhysicalDevice(VkInstance instance,VkSurfaceKHR surface,Device* devDets) 
 //create the device info
 //create the device
 //input instance,input surface,output phyDevice,output families, output device
-Device::Device(VkSurfaceKHR surface) {
+Device::Device(VkSurfaceKHR surface,SwapChainSupportDetails* swapDets) {
 	VkInstance instance = GetCurrentInstance()->instance;
-	if (!GetPhysicalDevice(instance,surface,this)) {
+	if (!GetPhysicalDevice(instance,surface,this,swapDets)) {
 		return;
 	}
 	//Creating a graphics logical device-------------------------------------
@@ -273,7 +272,12 @@ Device::Device(){
 	if (glfwCreateWindowSurface(GetCurrentInstance()->instance, dummy, NULL, &surface)!=VK_SUCCESS) {
 		Error("Couldn't create a surface!\n");
 	}
-	if (!GetPhysicalDevice(instance,surface,this)) {
+	SwapChainSupportDetails swapDets;
+	if(!DeviceGetSwapChainDetails(phyDev, surface, &swapDets)){
+        Error("This surface doesn't comply with the picked device. wack\n");
+    }
+
+	if (!GetPhysicalDevice(instance,surface,this,&swapDets)) {
 		return;
 	}
 	//Creating a graphics logical device-------------------------------------

@@ -29,10 +29,7 @@ void InitVolcano(){
     }
 }
 Window::Window(const char* windowName,Device* device){
-	//once
-    
-
-	// *pWindow = (Window *)malloc(sizeof(struct Window));
+    glfwWindowHint(GLFW_RESIZABLE,GLFW_TRUE);
     window = glfwCreateWindow(WIDTH,HEIGHT,windowName,NULL,NULL);
 
 	instance = GetCurrentInstance();
@@ -40,11 +37,9 @@ Window::Window(const char* windowName,Device* device){
     if (glfwCreateWindowSurface(GetCurrentInstance()->instance, window, NULL, &surface)!=VK_SUCCESS) {
 		Error("Couldn't create a surface!\n");
 	}
-    if(!IsDeviceCompatible(device->phyDev,surface,device->phyProps,&device->families,&device->swapSupport)){
-        Error("This surface doesn't comply with the picked device. wack\n");
-    }
-    // CreateSwapChain((*device),surface,&swapchain);
     swapchain = new SwapChain(device,surface);
+    
+    // CreateSwapChain((*device),surface,&swapchain);
     vulkanInit = 1;
 }
 

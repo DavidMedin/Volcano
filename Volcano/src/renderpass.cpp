@@ -1,9 +1,11 @@
 #include "renderpass.h"
+
+
 //need a way to override these things
 void CreateRenderPass(Window* win, Device* device,VkRenderPass* renderPass){
     //define the input/output format
     VkAttachmentDescription frameAttachment = {0};
-    frameAttachment.format = device->swapSupport.formats[win->swapchain->chosenFormat].format;
+    frameAttachment.format = win->swapchain->swapDets.formats[win->swapchain->chosenFormat].format;
     frameAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     frameAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;//clear the framebuffer right before rendering to it (no acid effect)
     frameAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;//duh
@@ -47,6 +49,10 @@ void CreateRenderPass(Window* win, Device* device,VkRenderPass* renderPass){
         Error("    Renderpass failed\n");
     }
     
+}
+
+RenderPass::RenderPass(Window* win,Device* device){
+    CreateRenderPass(win,device,&renderpass);
 }
 
 
