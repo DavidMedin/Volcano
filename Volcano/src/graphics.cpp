@@ -37,11 +37,12 @@ VkShaderModule CreateShaderModule(Device* device,char* code,unsigned int codeSiz
 }
 
 // void CreateShader(Device device,VkRenderPass renderpass, SwapChain swap,const char* vertexShader,const char* fragmentShader, Shader* shad){
-Shader::Shader(Device* device,VkRenderPass renderpass, SwapChain* swap,const char* vertexShader,const char* fragmentShader){
+Shader::Shader(Device* device,unsigned int shaderGroup, SwapChain* swap,const char* vertexShader,const char* fragmentShader){
     // *shad = malloc(sizeof(struct Shader));
     // Shader deShad = *shad;
     this->device = device;
-    this->renderpass = renderpass;
+    // this->renderpass = renderpass;
+    this->shaderGroup = shaderGroup;
     cmdPool = CreateCommandPool(this->device->device,&device->families);
     pipelineLayout = CreatePipeLayout(device);
     shadModCount = 2;
@@ -60,14 +61,18 @@ void Shader::RegisterSwapChains(std::initializer_list<SwapChain*> swaps){
     for(auto swap : swaps){
         Command* tmpCmd = new Command;
         tmpCmd->swapchain = swap;
-        tmpCmd->graphicsPipeline = CreateGraphicsPipeline(device,pipelineLayout,renderpass,swap->swapExtent,this);
+        tmpCmd->renderpass = GetRenderpass(swap,device,shaderGroup);
+        tmpCmd->graphicsPipeline = CreateGraphicsPipeline(device,pipelineLayout,tmpCmd->renderpass->renderpass,swap->swapExtent,this);
         tmpCmd->drawCommands = CreateCommandBuffers(device,cmdPool,swap->imageCount);
 
+        bool found = false;
         for(auto frame : swap->frames){
-            if(frame->renderpasses == renderpass){
-                FillCommandBuffers(swap->swapExtent,frame->framebuffers,tmpCmd->graphicsPipeline,renderpass,tmpCmd->drawCommands);
+            if(frame->renderpass == tmpCmd->renderpass){
+                FillCommandBuffers(swap->swapExtent,frame->framebuffers,tmpCmd->graphicsPipeline,tmpCmd->renderpass->renderpass,tmpCmd->drawCommands);
+                found = true;
             }
         }
+        if(found == false) Error("Wha oh! this Command's renderpass doesn't match any renderpasses in the given swapchain!\n");
 
         swap->shaders.push_back(this);
         tmpCmd->imageFence.resize(swap->imageCount,VK_NULL_HANDLE);
@@ -460,26 +465,33 @@ void SwapChain::Recreate(){
     if(!CreateImageViews(device->device,imageCount,images,&swapDets.formats[chosenFormat],&imageViews)){
 		Error("Couldn't create image views!\n");
 	}
-
     //renderpass refresh
+    for(auto frame : frames){
+        GetRenderpass(this,device,frame->renderpass->shaderGroup);
+        //delete/create new framebuffers
+        for(auto framebuffer : *frame->framebuffers){
+            vkDestroyFramebuffer(device->device,framebuffer,NULL);
+        }
+        
+    }
     //need lists of like render passes in format with different shader specs
     //each shader and struct framebuffer is attached to a list of those render passes
     //when refreshing swapchain check if shader spec and format is already existing and use that rather than creating a new one
 }
 
 
-void SwapChain::RegisterRenderPasses(std::initializer_list<VkRenderPass> renderpasses){
+void SwapChain::RegisterRenderPasses(std::initializer_list<std::shared_ptr<RenderPass>> renderpasses){
     for(auto renderpass : renderpasses){
         Framebuffer* tmpFrame = new Framebuffer;
         // this->renderpasses.push_back(renderpass);
-        tmpFrame->renderpasses = renderpass;
+        tmpFrame->renderpass = renderpass;
         tmpFrame->framebuffers = new std::vector<VkFramebuffer>(imageCount);
 
         for(unsigned int i = 0; i < imageCount;i++){
             VkFramebuffer frame;
             VkFramebufferCreateInfo frameInfo ={};
 			frameInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			frameInfo.renderPass = renderpass;//framebuffer must be compatible with this render pass. neat
+			frameInfo.renderPass = renderpass->renderpass;//framebuffer must be compatible with this render pass. neat
 			frameInfo.attachmentCount = 1;
 			frameInfo.pAttachments = &imageViews[i];
 			frameInfo.width = swapExtent.width;

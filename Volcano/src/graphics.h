@@ -12,11 +12,13 @@
 #include "commandpool.h"
 // #include "window.h"
 #include "devices.h"
+#include "renderpass.h"
 #define MAX_FRAMES_IN_FLIGHT 4
 
 struct SwapChain;
 struct Command{
 	SwapChain* swapchain;
+	std::shared_ptr<RenderPass> renderpass;
 	VkPipeline graphicsPipeline;
 	std::vector<VkCommandBuffer>* drawCommands;
 	std::vector<VkFence> imageFence;
@@ -28,17 +30,17 @@ struct Command{
 
 struct Shader{
 	Device* device;
-	VkRenderPass renderpass;
 	VkPipelineLayout pipelineLayout;
 
 	//index 0:vertex 1:frag 2:geom -- more in the future
 	VkShaderModule* shadMods;
 	unsigned int shadModCount;
+	unsigned int shaderGroup;
 
 	VkCommandPool cmdPool;
 	std::list<Command*> commands;
 
-	Shader(Device* device,VkRenderPass renderpass, SwapChain* swap,const char* vertexShader,const char* fragmentShader);
+	Shader(Device* device,unsigned int shaderGroup, SwapChain* swap,const char* vertexShader,const char* fragmentShader);
 	~Shader();
 	void RegisterSwapChains(std::initializer_list<SwapChain*> swaps);
 	void DrawFrame(SwapChain* window);
@@ -47,7 +49,7 @@ struct Shader{
 };
 
 struct Framebuffer{
-	VkRenderPass renderpasses;//shared_ptr
+	std::shared_ptr<RenderPass> renderpass;
 	std::vector<VkFramebuffer>* framebuffers;
 };
 
@@ -70,7 +72,7 @@ struct SwapChain{
 	std::list<Framebuffer*> frames;
 	SwapChain(Device* device,VkSurfaceKHR surface);
 	~SwapChain();
-	void RegisterRenderPasses(std::initializer_list<VkRenderPass> renderpasses);
+	void RegisterRenderPasses(std::initializer_list<std::shared_ptr<RenderPass>> renderpasses);
 	void Recreate();
 	void RecalcuateRenderPasses();
 };

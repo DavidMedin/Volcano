@@ -1,12 +1,12 @@
 #include "renderpass.h"
-
+#include "graphics.h"
 std::vector<std::list<RenderPass*>> renderpassRegistry;
 //need a way to override these things
-VkRenderPass CreateRenderPass(Window* win, Device* device){
+VkRenderPass CreateRenderPass(SwapChain* swap, Device* device){
     VkRenderPass tmpRender;
     //define the input/output format
     VkAttachmentDescription frameAttachment = {0};
-    frameAttachment.format = win->swapchain->swapDets.formats[win->swapchain->chosenFormat].format;
+    frameAttachment.format = swap->swapDets.formats[swap->chosenFormat].format;
     frameAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     frameAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;//clear the framebuffer right before rendering to it (no acid effect)
     frameAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;//duh
@@ -53,17 +53,20 @@ VkRenderPass CreateRenderPass(Window* win, Device* device){
 }
 
 void DeleteRenderpass(RenderPass* renderpass){
-    renderpassRegistry[renderpass->shaderGroup].remove(renderpass->renderpass);
+    renderpassRegistry[renderpass->shaderGroup].remove(renderpass);
+    vkDestroyRenderPass(renderpass->device,renderpass->renderpass,NULL);
+    printf("Deleted renderpass\n");
 }
 
-std::shared_ptr<RenderPass>* GetRenderpass(Window* win,Device* device,unsigned int shaderGroup){
-    VkFormat format = win->swapchain->swapDets.formats[win->swapchain->chosenFormat].format;
+std::shared_ptr<RenderPass> GetRenderpass(SwapChain* swap,Device* device,unsigned int shaderGroup){
+    VkFormat format = swap->swapDets.formats[swap->chosenFormat].format;
     //check if shaderGroup is valid, create otherwise
     if(renderpassRegistry.capacity() >= shaderGroup+1){
         //check if this renderpass exists
         for(auto renderpass : renderpassRegistry[shaderGroup]){
             if(renderpass->format == format){
-                return new std::shared_ptr<RenderPass>(renderpass);//still need to add destroyer
+                printf("Retrived used renderpass\n");
+                return std::shared_ptr<RenderPass>(renderpass,DeleteRenderpass);
             }
         }
     }else{
@@ -72,12 +75,12 @@ std::shared_ptr<RenderPass>* GetRenderpass(Window* win,Device* device,unsigned i
     //create new renderpass,register it, and return a pointer to it
     RenderPass* tmpRender;
     tmpRender->format = format;
-    tmpRender->renderpass = CreateRenderPass(win,device);
+    tmpRender->renderpass = CreateRenderPass(swap,device);
     tmpRender->shaderGroup = shaderGroup;
 
     renderpassRegistry[shaderGroup].push_back(tmpRender);
-
-    return new std::shared_ptr<RenderPass>(tmpRender);
+    printf("Createing new renderpass\n");
+    return std::shared_ptr<RenderPass>(tmpRender,DeleteRenderpass);
 }
 
 
