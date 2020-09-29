@@ -50,7 +50,7 @@ struct Shader{
 
 struct Framebuffer{
 	std::shared_ptr<RenderPass> renderpass;
-	std::vector<VkFramebuffer>* framebuffers;
+	std::vector<VkFramebuffer> framebuffers;
 };
 
 struct SwapChain{

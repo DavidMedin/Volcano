@@ -68,7 +68,7 @@ void Shader::RegisterSwapChains(std::initializer_list<SwapChain*> swaps){
         bool found = false;
         for(auto frame : swap->frames){
             if(frame->renderpass == tmpCmd->renderpass){
-                FillCommandBuffers(swap->swapExtent,frame->framebuffers,tmpCmd->graphicsPipeline,tmpCmd->renderpass->renderpass,tmpCmd->drawCommands);
+                FillCommandBuffers(swap->swapExtent,&frame->framebuffers,tmpCmd->graphicsPipeline,tmpCmd->renderpass->renderpass,tmpCmd->drawCommands);
                 found = true;
             }
         }
@@ -445,12 +445,17 @@ SwapChain::SwapChain(Device* devDets,VkSurfaceKHR surface){
 SwapChain::~SwapChain(){
     vkDestroySwapchainKHR(device->device,swapChain,NULL);
     for(auto frame : frames){
-        for(auto framebuffer : *frame->framebuffers){
+        for(auto framebuffer : frame->framebuffers){
             vkDestroyFramebuffer(device->device,framebuffer,NULL);
         }
     }
 }
 
+void CreateFramebuffers(std::vector<VkFramebuffer>* framebuffIn,unsigned int num){
+    for(unsigned int i = 0;i < num;i++){
+        
+    }
+}
 
 void SwapChain::Recreate(){
     vkDeviceWaitIdle(device->device);
@@ -469,7 +474,7 @@ void SwapChain::Recreate(){
     for(auto frame : frames){
         GetRenderpass(this,device,frame->renderpass->shaderGroup);
         //delete/create new framebuffers
-        for(auto framebuffer : *frame->framebuffers){
+        for(auto framebuffer : frame->framebuffers){
             vkDestroyFramebuffer(device->device,framebuffer,NULL);
         }
         
@@ -485,7 +490,7 @@ void SwapChain::RegisterRenderPasses(std::initializer_list<std::shared_ptr<Rende
         Framebuffer* tmpFrame = new Framebuffer;
         // this->renderpasses.push_back(renderpass);
         tmpFrame->renderpass = renderpass;
-        tmpFrame->framebuffers = new std::vector<VkFramebuffer>(imageCount);
+        tmpFrame->framebuffers = std::vector<VkFramebuffer>(imageCount);
 
         for(unsigned int i = 0; i < imageCount;i++){
             VkFramebuffer frame;
@@ -501,7 +506,7 @@ void SwapChain::RegisterRenderPasses(std::initializer_list<std::shared_ptr<Rende
 				Error("    framebuffer create failed\n");
 				return;
 			}
-            (*tmpFrame->framebuffers)[i] = frame;
+            tmpFrame->framebuffers[i] = frame;
         }
         frames.push_back(tmpFrame);
     }
