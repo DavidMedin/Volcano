@@ -451,9 +451,22 @@ SwapChain::~SwapChain(){
     }
 }
 
-void CreateFramebuffers(std::vector<VkFramebuffer>* framebuffIn,unsigned int num){
-    for(unsigned int i = 0;i < num;i++){
-        
+void CreateFramebuffers(VkDevice device, VkRenderPass render,VkImageView* imageViews,unsigned int imageCount,VkExtent2D extent, std::vector<VkFramebuffer>* framebuffIn){
+    for(unsigned int i = 0;i < imageCount;i++){
+        VkFramebuffer frame;
+        VkFramebufferCreateInfo frameInfo ={};
+		frameInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		frameInfo.renderPass = render;//framebuffer must be compatible with this render pass.neat
+		frameInfo.attachmentCount = 1;
+		frameInfo.pAttachments = &imageViews[i];
+		frameInfo.width = extent.width;
+		frameInfo.height = extent.height;
+		frameInfo.layers = 1;
+        if(vkCreateFramebuffer(device,&frameInfo,NULL,&frame) != VK_SUCCESS){
+			Error("    framebuffer create failed\n");
+			return;
+		}
+        (*framebuffIn)[i] = frame;
     }
 }
 
@@ -490,24 +503,24 @@ void SwapChain::RegisterRenderPasses(std::initializer_list<std::shared_ptr<Rende
         Framebuffer* tmpFrame = new Framebuffer;
         // this->renderpasses.push_back(renderpass);
         tmpFrame->renderpass = renderpass;
-        tmpFrame->framebuffers = std::vector<VkFramebuffer>(imageCount);
-
-        for(unsigned int i = 0; i < imageCount;i++){
-            VkFramebuffer frame;
-            VkFramebufferCreateInfo frameInfo ={};
-			frameInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			frameInfo.renderPass = renderpass->renderpass;//framebuffer must be compatible with this render pass. neat
-			frameInfo.attachmentCount = 1;
-			frameInfo.pAttachments = &imageViews[i];
-			frameInfo.width = swapExtent.width;
-			frameInfo.height = swapExtent.height;
-			frameInfo.layers = 1;
-            if(vkCreateFramebuffer(device->device,&frameInfo,NULL,&frame) != VK_SUCCESS){
-				Error("    framebuffer create failed\n");
-				return;
-			}
-            tmpFrame->framebuffers[i] = frame;
-        }
+        tmpFrame->framebuffers.resize(imageCount);
+        // for(unsigned int i = 0; i < imageCount;i++){
+        //     VkFramebuffer frame;
+        //     VkFramebufferCreateInfo frameInfo ={};
+		// 	frameInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		// 	frameInfo.renderPass = renderpass->renderpass;//framebuffer must be compatible with this render pass. neat
+		// 	frameInfo.attachmentCount = 1;
+		// 	frameInfo.pAttachments = &imageViews[i];
+		// 	frameInfo.width = swapExtent.width;
+		// 	frameInfo.height = swapExtent.height;
+		// 	frameInfo.layers = 1;
+        //     if(vkCreateFramebuffer(device->device,&frameInfo,NULL,&frame) != VK_SUCCESS){
+		// 		Error("    framebuffer create failed\n");
+		// 		return;
+		// 	}
+        //     tmpFrame->framebuffers[i] = frame;
+        // }
+        CreateFramebuffers(device->device,renderpass->renderpass,imageViews,imageCount,swapExtent,&tmpFrame->framebuffers);
         frames.push_back(tmpFrame);
     }
 }
