@@ -15,7 +15,7 @@ int DeviceGetSwapChainDetails(VkPhysicalDevice phyDev,VkSurfaceKHR surface,SwapC
 	//get device capabilites
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phyDev, surface, &(_swapDets.capabilities));
 	//get formats
-	_swapDets.formats = NULL;
+	_swapDets.formats = nullptr;
 	_swapDets.formatCount = 0;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(phyDev, surface, &_swapDets.formatCount, NULL);
 	if (_swapDets.formatCount != 0) {
@@ -273,9 +273,9 @@ Device::Device(){
 		Error("Couldn't create a surface!\n");
 	}
 	SwapChainSupportDetails swapDets;
-	if(!DeviceGetSwapChainDetails(phyDev, surface, &swapDets)){
-        Error("This surface doesn't comply with the picked device. wack\n");
-    }
+	// if(!DeviceGetSwapChainDetails(phyDev, surface, &swapDets)){
+    //     Error("This surface doesn't comply with the picked device. wack\n");
+    // }
 
 	if (!GetPhysicalDevice(instance,surface,this,&swapDets)) {
 		return;

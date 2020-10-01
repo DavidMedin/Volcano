@@ -67,12 +67,12 @@ void Shader::RegisterSwapChains(std::initializer_list<SwapChain*> swaps){
 
         bool found = false;
         for(auto frame : swap->frames){
-            if(frame->renderpass == tmpCmd->renderpass){
+            if(frame->renderpass.get() == tmpCmd->renderpass.get()){
                 FillCommandBuffers(swap->swapExtent,&frame->framebuffers,tmpCmd->graphicsPipeline,tmpCmd->renderpass->renderpass,tmpCmd->drawCommands);
                 found = true;
             }
         }
-        if(found == false) Error("Wha oh! this Command's renderpass doesn't match any renderpasses in the given swapchain!\n");
+        if(found == false) {Error("Wha oh! this Command's renderpass doesn't match any renderpasses in the given swapchain!\n");}
 
         swap->shaders.push_back(this);
         tmpCmd->imageFence.resize(swap->imageCount,VK_NULL_HANDLE);
@@ -428,6 +428,7 @@ void RecreateSwapchain(Device* devDets,VkSurfaceKHR surface,SwapChain* swap){
 // int CreateSwapChain(Device* devDets,VkSurfaceKHR surface, SwapChain* swapchain){
 SwapChain::SwapChain(Device* devDets,VkSurfaceKHR surface){
     this->device = devDets;
+    this->surface = surface;
 	RecreateSwapchain(devDets,surface,this);
     //get the VkImages
 	imageCount = 0;
