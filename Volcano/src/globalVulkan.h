@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <memory>
 #include <stdlib.h>
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"

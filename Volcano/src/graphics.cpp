@@ -61,7 +61,7 @@ void Shader::RegisterSwapChains(std::initializer_list<SwapChain*> swaps){
     for(auto swap : swaps){
         Command* tmpCmd = new Command;
         tmpCmd->swapchain = swap;
-        tmpCmd->renderpass = GetRenderpass(swap,device,shaderGroup);
+        tmpCmd->renderpass = GetRenderpass(swap->GetFormat(),device,shaderGroup);
         tmpCmd->graphicsPipeline = CreateGraphicsPipeline(device,pipelineLayout,tmpCmd->renderpass->renderpass,swap->swapExtent,this);
         tmpCmd->drawCommands = CreateCommandBuffers(device,cmdPool,swap->imageCount);
 
@@ -485,7 +485,7 @@ void SwapChain::Recreate(){
 	}
     //renderpass refresh
     for(auto frame : frames){
-        GetRenderpass(this,device,frame->renderpass->shaderGroup);
+        GetRenderpass(this->GetFormat(),device,frame->renderpass->shaderGroup);
         //delete/create new framebuffers
         for(auto framebuffer : frame->framebuffers){
             vkDestroyFramebuffer(device->device,framebuffer,NULL);
@@ -523,4 +523,8 @@ void SwapChain::RegisterRenderPasses(std::initializer_list<std::shared_ptr<Rende
         CreateFramebuffers(device->device,renderpass->renderpass,imageViews,imageCount,swapExtent,&tmpFrame->framebuffers);
         frames.push_back(tmpFrame);
     }
+}
+
+VkFormat SwapChain::GetFormat(){
+    return swapDets.formats[chosenFormat].format;
 }

@@ -75,6 +75,8 @@ struct SwapChain{
 	void RegisterRenderPasses(std::initializer_list<std::shared_ptr<RenderPass>> renderpasses);
 	void Recreate();
 	void RecalcuateRenderPasses();
+
+	VkFormat GetFormat();
 };
 
 

@@ -2,11 +2,11 @@
 #include "graphics.h"
 std::vector<std::list<RenderPass*>> renderpassRegistry;
 //need a way to override these things
-VkRenderPass CreateRenderPass(SwapChain* swap, Device* device){
+VkRenderPass CreateRenderPass(VkFormat format, Device* device){
     VkRenderPass tmpRender;
     //define the input/output format
     VkAttachmentDescription frameAttachment = {0};
-    frameAttachment.format = swap->swapDets.formats[swap->chosenFormat].format;
+    frameAttachment.format = format;
     frameAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     frameAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;//clear the framebuffer right before rendering to it (no acid effect)
     frameAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;//duh
@@ -58,8 +58,7 @@ void DeleteRenderpass(RenderPass* renderpass){
     printf("Deleted renderpass\n");
 }
 
-std::shared_ptr<RenderPass> GetRenderpass(SwapChain* swap,Device* device,unsigned int shaderGroup){
-    VkFormat format = swap->swapDets.formats[swap->chosenFormat].format;
+std::shared_ptr<RenderPass> GetRenderpass(VkFormat format,Device* device,unsigned int shaderGroup){
     //check if shaderGroup is valid, create otherwise
     if(renderpassRegistry.capacity() >= shaderGroup+1){
         //check if this renderpass exists
@@ -75,7 +74,7 @@ std::shared_ptr<RenderPass> GetRenderpass(SwapChain* swap,Device* device,unsigne
     //create new renderpass,register it, and return a pointer to it
     RenderPass* tmpRender;
     tmpRender->format = format;
-    tmpRender->renderpass = CreateRenderPass(swap,device);
+    tmpRender->renderpass = CreateRenderPass(format,device);
     tmpRender->shaderGroup = shaderGroup;
 
     renderpassRegistry[shaderGroup].push_back(tmpRender);
@@ -83,6 +82,13 @@ std::shared_ptr<RenderPass> GetRenderpass(SwapChain* swap,Device* device,unsigne
     return std::shared_ptr<RenderPass>(tmpRender,DeleteRenderpass);
 }
 
+void DestroyRenderpasses(){
+    for(auto group: renderpassRegistry){
+        for(auto render: group){
+            vkDestroyRenderPass(render->device,render->renderpass,NULL);
+        }
+    }
+}
 
 // void CreateRenderPass(Window** win,unsigned int windowCount, Device* device,VkRenderPass* renderPass){
 //     _CreateRenderPass(win[0],device,renderPass);//win is needed for formats, and all windows should have the same format

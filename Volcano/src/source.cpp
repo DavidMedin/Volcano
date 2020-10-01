@@ -7,7 +7,8 @@ std::shared_ptr<RenderPass> renderPass;
 void Shutdown() {
 	vkDeviceWaitIdle(device->device);//finish everything it is doing so the semaphores are no longer in use
 
-	vkDestroyRenderPass(device->device,renderPass,NULL);
+	// vkDestroyRenderPass(device->device,renderPass,NULL);
+	DestroyRenderpasses();
 	delete shad;
 	DestoryWindow(device,window);
 	GetCurrentInstance()->~Instance();
@@ -20,10 +21,10 @@ int main() {
 	device = new Device();
 	window = new Window("TestWindow",device);
 
-	CreateRenderPass(window,device);
+	renderPass = GetRenderpass(window->swapchain->GetFormat(),device,0);
 	window->swapchain->RegisterRenderPasses({renderPass});
 
-	shad = new Shader(device,renderPass,window->swapchain,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
+	shad = new Shader(device,0,window->swapchain,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
 	shad->RegisterSwapChains({window->swapchain});
 
 	//game loop
