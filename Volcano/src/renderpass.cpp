@@ -76,6 +76,7 @@ std::shared_ptr<RenderPass> GetRenderpass(VkFormat format,Device* device,unsigne
     tmpRender->format = format;
     tmpRender->renderpass = CreateRenderPass(format,device);
     tmpRender->shaderGroup = shaderGroup;
+    tmpRender->device = device->device;
 
     renderpassRegistry[shaderGroup].push_back(tmpRender);
     printf("Createing new renderpass\n");
