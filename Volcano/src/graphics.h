@@ -7,6 +7,7 @@
 #include <memory>
 
 #include <vulkan/vulkan.h>
+#include <GLFW/glfw3.h>
 
 #include "errorCatch.h"
 #include "commandpool.h"
@@ -57,9 +58,11 @@ struct SwapChain{
 	Device* device;
 	VkSwapchainKHR swapChain;
 	VkSurfaceKHR surface;
+	GLFWwindow* win;
 	//indices into swapDets.formats and presentModes
 	SwapChainSupportDetails swapDets;
 	VkExtent2D swapExtent;
+	bool windowResized;
 	unsigned int chosenFormat;
 	unsigned int chosenPresent;
 

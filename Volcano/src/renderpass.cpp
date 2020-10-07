@@ -65,7 +65,7 @@ std::shared_ptr<RenderPass> GetRenderpass(VkFormat format,Device* device,unsigne
         for(auto renderpass : renderpassRegistry[shaderGroup]){
             if(renderpass->format == format){
                 printf("Retrived used renderpass\n");
-                return std::shared_ptr<RenderPass>(renderpass,DeleteRenderpass);
+                return std::shared_ptr<RenderPass>(renderpass);
             }
         }
     }else{

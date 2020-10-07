@@ -28,17 +28,24 @@ void InitVolcano(){
         SetCurrentInstance(instance);
     }
 }
+
+void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+    Window* win = (Window*)glfwGetWindowUserPointer(window);
+    win->swapchain->windowResized = true;
+}
+
 Window::Window(const char* windowName,Device* device){
     glfwWindowHint(GLFW_RESIZABLE,GLFW_TRUE);
     window = glfwCreateWindow(WIDTH,HEIGHT,windowName,NULL,NULL);
-
+    glfwSetWindowUserPointer(window, this);
+    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 	instance = GetCurrentInstance();
     
     if (glfwCreateWindowSurface(GetCurrentInstance()->instance, window, NULL, &surface)!=VK_SUCCESS) {
 		Error("Couldn't create a surface!\n");
 	}
     swapchain = new SwapChain(device,surface);
-    
+    swapchain->win = window;
     // CreateSwapChain((*device),surface,&swapchain);
     vulkanInit = 1;
 }

@@ -96,7 +96,15 @@ void Shader::DrawFrame(SwapChain* swap){
             // vkResetFences(device->device,1,&targetCommands->fences[nextFrame]);
 
             unsigned int imageIndex;
-            vkAcquireNextImageKHR(device->device,swap->swapChain,UINT64_MAX,targetCommands->available[nextFrame],nullptr,&imageIndex);
+            VkResult rez = vkAcquireNextImageKHR(device->device,swap->swapChain,UINT64_MAX,targetCommands->available[nextFrame],nullptr,&imageIndex);
+            if(rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR || swap->windowResized){
+                swap->windowResized = false;
+                swap->Recreate();
+                return;
+            }else if(rez != VK_SUCCESS){
+                Error("Failed to acquire a swapchain image\n");
+                return;
+            }
 
             if(targetCommands->imageFence[imageIndex] != VK_NULL_HANDLE){
                 vkWaitForFences(device->device,1,&targetCommands->imageFence[imageIndex],VK_TRUE,UINT64_MAX);
@@ -126,7 +134,12 @@ void Shader::DrawFrame(SwapChain* swap){
             presentInfo.swapchainCount = 1;//whaaaatttt?
             presentInfo.pSwapchains = &swap->swapChain;
             presentInfo.pImageIndices = &imageIndex;
-            vkQueuePresentKHR(device->queues[1],&presentInfo);
+            rez = vkQueuePresentKHR(device->queues[1],&presentInfo);
+            if(rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR){
+                swap->Recreate();
+            }else if(rez != VK_SUCCESS){
+                Error("Failed to acquire a swapchain image\n");
+            }
             // vkQueueWaitIdle(device->queues[1]);
             nextFrame = (nextFrame + 1) % MAX_FRAMES_IN_FLIGHT;
             return;
@@ -427,6 +440,7 @@ void RecreateSwapchain(Device* devDets,VkSurfaceKHR surface,SwapChain* swap){
 
 // int CreateSwapChain(Device* devDets,VkSurfaceKHR surface, SwapChain* swapchain){
 SwapChain::SwapChain(Device* devDets,VkSurfaceKHR surface){
+    this->windowResized = false;
     this->device = devDets;
     this->surface = surface;
 	RecreateSwapchain(devDets,surface,this);
@@ -472,21 +486,45 @@ void CreateFramebuffers(VkDevice device, VkRenderPass render,VkImageView* imageV
 }
 
 void SwapChain::Recreate(){
+    //my copy pasta is esquisite
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(win, &width, &height);
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(win, &width, &height);
+        glfwWaitEvents();
+    }
+
     vkDeviceWaitIdle(device->device);
+    
     //create new swapchain
     vkDestroySwapchainKHR(device->device,swapChain,NULL);
+    RecreateSwapchain(device,surface,this);
+    
+    unsigned int oldCount = imageCount;
+    vkGetSwapchainImagesKHR(device->device,swapChain,&imageCount,NULL);
+	if(imageCount != oldCount){
+        free(images);
+        images = (VkImage*)malloc(sizeof(VkImage)*imageCount);
+    }
+	vkGetSwapchainImagesKHR(device->device,swapChain,&imageCount,images);
+	if(imageCount == 0){
+		Error("the swap chain has zero images!\n");
+	}
     //destroy image views
-    for(unsigned int i = 0; i < imageCount;i++){
+    for(unsigned int i = 0; i < oldCount;i++){
         vkDestroyImageView(device->device,imageViews[i],NULL);
     }
-    RecreateSwapchain(device,surface,this);
+    if(oldCount != imageCount){
+        free(imageViews);
+        imageViews = (VkImageView*)malloc(sizeof(VkImageView)*imageCount);
+    }
     //create image views
     if(!CreateImageViews(device->device,imageCount,images,&swapDets.formats[chosenFormat],&imageViews)){
 		Error("Couldn't create image views!\n");
 	}
     //renderpass refresh
     for(auto frame : frames){
-        GetRenderpass(this->GetFormat(),device,frame->renderpass->shaderGroup);
+        frame->renderpass = GetRenderpass(this->GetFormat(),device,frame->renderpass->shaderGroup);
         //delete/create new framebuffers
         for(auto framebuffer : frame->framebuffers){
             vkDestroyFramebuffer(device->device,framebuffer,NULL);
@@ -504,7 +542,7 @@ void SwapChain::Recreate(){
                 //get the framebuffer
                 for(auto frame: frames){
                     if(frame->renderpass.get() == command->renderpass.get()){
-                        FillCommandBuffers(swapExtent,&frame->framebuffers,command->graphicsPipeline,command->renderpass->renderpass,&command->drawCommands);
+                        FillCommandBuffers(swapExtent,&frame->framebuffers,command->graphicsPipeline,command->renderpass->renderpass,command->drawCommands);
                     }
                 }
                 
