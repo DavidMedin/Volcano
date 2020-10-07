@@ -2,7 +2,7 @@
 Device* device;
 Window* window;
 Shader* shad;
-std::weak_ptr<RenderPass> renderPass;
+std::shared_ptr<RenderPass> renderPass;
 
 void Shutdown() {
 	vkDeviceWaitIdle(device->device);//finish everything it is doing so the semaphores are no longer in use
@@ -21,7 +21,7 @@ int main() {
 	device = new Device();
 	window = new Window("TestWindow",device);
 
-	renderPass = std::weak_ptr<RenderPass>(GetRenderpass(window->swapchain->GetFormat(),device,0));
+	renderPass = GetRenderpass(window->swapchain->GetFormat(),device,0);
 	window->swapchain->RegisterRenderPasses({renderPass});
 
 	shad = new Shader(device,0,window->swapchain,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");

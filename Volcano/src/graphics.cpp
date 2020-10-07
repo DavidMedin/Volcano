@@ -491,7 +491,25 @@ void SwapChain::Recreate(){
         for(auto framebuffer : frame->framebuffers){
             vkDestroyFramebuffer(device->device,framebuffer,NULL);
         }
-        
+        CreateFramebuffers(device->device,frame->renderpass->renderpass,imageViews,imageCount,swapExtent,&frame->framebuffers);
+    }
+    for(auto shad: shaders){
+        for(auto command: shad->commands){
+            if(command->swapchain == this){
+                command->renderpass = GetRenderpass(command->swapchain->GetFormat(),device,command->renderpass->shaderGroup);
+                
+                vkDestroyPipeline(device->device,command->graphicsPipeline,NULL);
+                command->graphicsPipeline = CreateGraphicsPipeline(device,shad->pipelineLayout,command->renderpass->renderpass,swapExtent,shad);
+                //fill the command buffers
+                //get the framebuffer
+                for(auto frame: frames){
+                    if(frame->renderpass.get() == command->renderpass.get()){
+                        FillCommandBuffers(swapExtent,&frame->framebuffers,command->graphicsPipeline,command->renderpass->renderpass,&command->drawCommands);
+                    }
+                }
+                
+            }
+        }
     }
     //need lists of like render passes in format with different shader specs
     //each shader and struct framebuffer is attached to a list of those render passes
