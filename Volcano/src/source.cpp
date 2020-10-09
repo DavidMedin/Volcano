@@ -1,6 +1,7 @@
 #include "source.h"
 Device* device;
 Window* window;
+Window* otherWindow;
 Shader* shad;
 std::shared_ptr<RenderPass> renderPass;
 
@@ -20,12 +21,15 @@ int main() {
 	InitVolcano();
 	device = new Device();
 	window = new Window("TestWindow",device);
+	otherWindow = new Window("otherWindow", device);
 
 	renderPass = GetRenderpass(window->swapchain->GetFormat(),device,0);
 	window->swapchain->RegisterRenderPasses({renderPass});
+	otherWindow->swapchain->RegisterRenderPasses({ renderPass });
 
-	shad = new Shader(device,0,window->swapchain,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
-	shad->RegisterSwapChains({window->swapchain});
+	shad = new Shader(device,0,window->swapchain,"src/shaders/vertex.spv","src/shaders/fragment.spv");
+	shad->RegisterSwapChains({ window->swapchain });
+	shad->RegisterSwapChains({otherWindow->swapchain});
 
 	//game loop
 	double afterTime = 0;
@@ -38,6 +42,7 @@ int main() {
 		beforeTime = afterTime;
 
 		shad->DrawFrame(window->swapchain);
+		shad->DrawFrame(otherWindow->swapchain);
 		glfwPollEvents();
 	}
 	Shutdown();

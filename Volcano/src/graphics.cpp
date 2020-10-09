@@ -97,14 +97,13 @@ void Shader::DrawFrame(SwapChain* swap){
 
             unsigned int imageIndex;
             VkResult rez = vkAcquireNextImageKHR(device->device,swap->swapChain,UINT64_MAX,targetCommands->available[nextFrame],nullptr,&imageIndex);
-            if(rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR || swap->windowResized){
-                swap->windowResized = false;
-                swap->Recreate();
-                return;
-            }else if(rez != VK_SUCCESS){
-                Error("Failed to acquire a swapchain image\n");
-                return;
-            }
+            //if(rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR|| swap->windowResized){
+            //    swap->windowResized = false;
+            //    swap->Recreate();
+            //}else if(rez != VK_SUCCESS){
+            //    Error("Failed to acquire a swapchain image\n");
+            //    return;
+            //}
 
             if(targetCommands->imageFence[imageIndex] != VK_NULL_HANDLE){
                 vkWaitForFences(device->device,1,&targetCommands->imageFence[imageIndex],VK_TRUE,UINT64_MAX);
@@ -135,7 +134,8 @@ void Shader::DrawFrame(SwapChain* swap){
             presentInfo.pSwapchains = &swap->swapChain;
             presentInfo.pImageIndices = &imageIndex;
             rez = vkQueuePresentKHR(device->queues[1],&presentInfo);
-            if(rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR){
+            if(rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR || swap->windowResized){
+                swap->windowResized = false;
                 swap->Recreate();
             }else if(rez != VK_SUCCESS){
                 Error("Failed to acquire a swapchain image\n");
@@ -495,11 +495,11 @@ void SwapChain::Recreate(){
     }
 
     vkDeviceWaitIdle(device->device);
-    
+
     //create new swapchain
     vkDestroySwapchainKHR(device->device,swapChain,NULL);
     RecreateSwapchain(device,surface,this);
-    
+
     unsigned int oldCount = imageCount;
     vkGetSwapchainImagesKHR(device->device,swapChain,&imageCount,NULL);
 	if(imageCount != oldCount){
@@ -535,7 +535,7 @@ void SwapChain::Recreate(){
         for(auto command: shad->commands){
             if(command->swapchain == this){
                 command->renderpass = GetRenderpass(command->swapchain->GetFormat(),device,command->renderpass->shaderGroup);
-                
+
                 vkDestroyPipeline(device->device,command->graphicsPipeline,NULL);
                 command->graphicsPipeline = CreateGraphicsPipeline(device,shad->pipelineLayout,command->renderpass->renderpass,swapExtent,shad);
                 //fill the command buffers
@@ -545,7 +545,7 @@ void SwapChain::Recreate(){
                         FillCommandBuffers(swapExtent,&frame->framebuffers,command->graphicsPipeline,command->renderpass->renderpass,command->drawCommands);
                     }
                 }
-                
+
             }
         }
     }

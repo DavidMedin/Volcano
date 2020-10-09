@@ -1,6 +1,6 @@
 #include "renderpass.h"
 #include "graphics.h"
-std::vector<std::list<RenderPass*>> renderpassRegistry;
+std::vector<std::list<std::weak_ptr<RenderPass>>> renderpassRegistry;
 //need a way to override these things
 VkRenderPass CreateRenderPass(VkFormat format, Device* device){
     VkRenderPass tmpRender;
@@ -53,9 +53,18 @@ VkRenderPass CreateRenderPass(VkFormat format, Device* device){
 }
 
 void DeleteRenderpass(RenderPass* renderpass){
-    renderpassRegistry[renderpass->shaderGroup].remove(renderpass);
-    vkDestroyRenderPass(renderpass->device,renderpass->renderpass,NULL);
-    printf("Deleted renderpass\n");
+    //I hate this
+    std::list<std::weak_ptr<RenderPass>>::iterator i = renderpassRegistry[renderpass->shaderGroup].begin();
+    for(auto render: renderpassRegistry[renderpass->shaderGroup]){
+        if(((std::shared_ptr<RenderPass>)render)->format == renderpass->format){
+            renderpassRegistry[renderpass->shaderGroup].erase(i);
+            vkDestroyRenderPass(renderpass->device,renderpass->renderpass,NULL);
+            printf("Deleted renderpass\n");
+            return;
+        }
+        i++;
+    }
+    Error("AAAAHAHAHHAHHAHAAH! WHY CAN'T THE RENDERPASS DELETER FIND THE RENDERPASS! AHAHHAAH!\n");
 }
 
 std::shared_ptr<RenderPass> GetRenderpass(VkFormat format,Device* device,unsigned int shaderGroup){
@@ -63,9 +72,9 @@ std::shared_ptr<RenderPass> GetRenderpass(VkFormat format,Device* device,unsigne
     if(renderpassRegistry.capacity() >= shaderGroup+1){
         //check if this renderpass exists
         for(auto renderpass : renderpassRegistry[shaderGroup]){
-            if(renderpass->format == format){
+            if(((std::shared_ptr<RenderPass>)renderpass)->format == format){
                 printf("Retrived used renderpass\n");
-                return std::make_shared<RenderPass>(*renderpass);
+                return renderpass.lock();
             }
         }
     }else{
@@ -78,15 +87,16 @@ std::shared_ptr<RenderPass> GetRenderpass(VkFormat format,Device* device,unsigne
     tmpRender->shaderGroup = shaderGroup;
     tmpRender->device = device->device;
 
-    renderpassRegistry[shaderGroup].push_back(tmpRender);
+    std::shared_ptr<RenderPass> tmpPass = std::shared_ptr<RenderPass>(tmpRender,DeleteRenderpass);
+    renderpassRegistry[shaderGroup].push_back(tmpPass);
     printf("Createing new renderpass\n");
-    return std::shared_ptr<RenderPass>(tmpRender,DeleteRenderpass);
+    return tmpPass;
 }
 
 void DestroyRenderpasses(){
     for(auto group: renderpassRegistry){
         for(auto render: group){
-            vkDestroyRenderPass(render->device,render->renderpass,NULL);
+            vkDestroyRenderPass(((std::shared_ptr<RenderPass>)render)->device,((std::shared_ptr<RenderPass>)render)->renderpass,NULL);
         }
     }
 }
