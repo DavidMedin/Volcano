@@ -53,11 +53,9 @@ Window::Window(const char* windowName,Device* device){
 void DestoryWindow(Device* device, Window* window){
     Instance* instance = window->instance;
     //destory everything in DeviceDetails
-    for(unsigned int i = 0;i < window->swapchain->imageCount;i++){
-        vkDestroyImageView(device->device,window->swapchain->imageViews[i],NULL);
-    }
+    
     delete window->swapchain;
-    vkDestroyDevice(device->device,NULL);
+    // vkDestroyDevice(device->device,NULL);
     //destroy VkSurfaceKHR
     vkDestroySurfaceKHR(instance->instance,window->surface,NULL);
     //destroy GLFWwindow

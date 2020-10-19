@@ -17,16 +17,19 @@
 #define MAX_FRAMES_IN_FLIGHT 4
 
 struct SwapChain;
-struct Command{
+struct Draw{
 	SwapChain* swapchain;
 	std::shared_ptr<RenderPass> renderpass;
 	VkPipeline graphicsPipeline;
+	std::vector<VkFramebuffer> frames;
 	std::vector<VkCommandBuffer>* drawCommands;
+
 	std::vector<VkFence> imageFence;
 
 	std::vector<VkSemaphore> available;
 	std::vector<VkSemaphore> presentable;
 	std::vector<VkFence> fences;
+	~Draw();
 };
 
 struct Shader{
@@ -36,23 +39,24 @@ struct Shader{
 	//index 0:vertex 1:frag 2:geom -- more in the future
 	VkShaderModule* shadMods;
 	unsigned int shadModCount;
-	unsigned int shaderGroup;
+	ShaderGroup* group;
 
 	VkCommandPool cmdPool;
-	std::list<Command*> commands;
+	std::list<Draw*> commands;
 
-	Shader(Device* device,unsigned int shaderGroup, SwapChain* swap,const char* vertexShader,const char* fragmentShader);
+	Shader(Device* device,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
 	~Shader();
-	void RegisterSwapChains(std::initializer_list<SwapChain*> swaps);
+	void RegisterSwapChain(SwapChain* swap);
+	void DestroySwapChain(SwapChain* swap);
 	void DrawFrame(SwapChain* window);
-	void RemoveSwapChain();//need to be done
-	void RecalculateSwapchain(SwapChain* swap);
+	// void RemoveSwapChain();//need to be done
+	// void RecalculateSwapchain(SwapChain* swap);
 };
 
-struct Framebuffer{
-	std::shared_ptr<RenderPass> renderpass;
-	std::vector<VkFramebuffer> framebuffers;
-};
+// struct Framebuffer{
+// 	std::shared_ptr<RenderPass> renderpass;
+// 	std::vector<VkFramebuffer> framebuffers;
+// };
 
 struct SwapChain{
 	Device* device;
@@ -71,13 +75,13 @@ struct SwapChain{
 	VkImage* images;
 	VkImageView* imageViews;
 
-	std::list<Shader*> shaders;//shaders to recreate on recreation
-	std::list<Framebuffer*> frames;
+	// std::list<Shader*> shaders;//shaders to recreate on recreation
+	// std::list<Framebuffer*> frames;
 	SwapChain(Device* device,VkSurfaceKHR surface);
 	~SwapChain();
-	void RegisterRenderPasses(std::initializer_list<std::shared_ptr<RenderPass>> renderpasses);
+	// void RegisterRenderPasses(std::initializer_list<ShaderGroup*> renderpasses);
 	void Recreate();
-	void RecalcuateRenderPasses();
+	// void RecalcuateRenderPasses();
 
 	VkFormat GetFormat();
 };

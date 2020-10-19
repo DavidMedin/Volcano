@@ -3,15 +3,14 @@ Device* device;
 Window* window;
 Window* otherWindow;
 Shader* shad;
-std::shared_ptr<RenderPass> renderPass;
 
 void Shutdown() {
 	vkDeviceWaitIdle(device->device);//finish everything it is doing so the semaphores are no longer in use
 
-	// vkDestroyRenderPass(device->device,renderPass,NULL);
-	DestroyRenderpasses();
-	delete shad;
 	DestoryWindow(device,window);
+	DestoryWindow(device,otherWindow);
+	delete shad;
+	vkDestroyDevice(device->device,NULL);
 	GetCurrentInstance()->~Instance();
 	SetCurrentInstance(nullptr);
 	DestroyGLFW();
@@ -20,16 +19,14 @@ void Shutdown() {
 int main() {
 	InitVolcano();
 	device = new Device();
+
+	ShaderGroup group;
+	group.index = 0;
+	shad = new Shader(device,&group,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
+
+
 	window = new Window("TestWindow",device);
 	otherWindow = new Window("otherWindow", device);
-
-	renderPass = GetRenderpass(window->swapchain->GetFormat(),device,0);
-	window->swapchain->RegisterRenderPasses({renderPass});
-	otherWindow->swapchain->RegisterRenderPasses({ renderPass });
-
-	shad = new Shader(device,0,window->swapchain,"src/shaders/vertex.spv","src/shaders/fragment.spv");
-	shad->RegisterSwapChains({ window->swapchain });
-	shad->RegisterSwapChains({otherWindow->swapchain});
 
 	//game loop
 	double afterTime = 0;

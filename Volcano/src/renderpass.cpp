@@ -2,7 +2,7 @@
 #include "graphics.h"
 std::vector<std::list<std::weak_ptr<RenderPass>>> renderpassRegistry;
 //need a way to override these things
-VkRenderPass CreateRenderPass(VkFormat format, Device* device){
+VkRenderPass _CreateRenderPass(VkFormat format, Device* device){
     VkRenderPass tmpRender;
     //define the input/output format
     VkAttachmentDescription frameAttachment = {0};
@@ -54,10 +54,10 @@ VkRenderPass CreateRenderPass(VkFormat format, Device* device){
 
 void DeleteRenderpass(RenderPass* renderpass){
     //I hate this
-    std::list<std::weak_ptr<RenderPass>>::iterator i = renderpassRegistry[renderpass->shaderGroup].begin();
-    for(auto render: renderpassRegistry[renderpass->shaderGroup]){
-        if(((std::shared_ptr<RenderPass>)render)->format == renderpass->format){
-            renderpassRegistry[renderpass->shaderGroup].erase(i);
+    std::list<std::weak_ptr<RenderPass>>::iterator i = renderpassRegistry[renderpass->group->index].begin();
+    for(auto render: renderpassRegistry[renderpass->group->index]){
+        if(render.expired()){// a little dangerous but whatever
+            renderpassRegistry[renderpass->group->index].erase(i);
             vkDestroyRenderPass(renderpass->device,renderpass->renderpass,NULL);
             printf("Deleted renderpass\n");
             return;
@@ -73,22 +73,36 @@ std::shared_ptr<RenderPass> GetRenderpass(VkFormat format,Device* device,unsigne
         //check if this renderpass exists
         for(auto renderpass : renderpassRegistry[shaderGroup]){
             if(((std::shared_ptr<RenderPass>)renderpass)->format == format){
-                printf("Retrived used renderpass\n");
+                printf("(Get) Retrived used renderpass\n");
+                return renderpass.lock();
+            }
+        }
+    }
+    Error("No renderpasses with that format!\n");
+    return NULL;
+}
+std::shared_ptr<RenderPass> CreateRenderpass(VkFormat format,Device* device,ShaderGroup* group){
+ //check if shaderGroup is valid, create otherwise
+    if(renderpassRegistry.capacity() >= group->index+1){
+        //check if this renderpass exists
+        for(auto renderpass : renderpassRegistry[group->index]){
+            if(((std::shared_ptr<RenderPass>)renderpass)->format == format){
+                printf("(Create) Retrived used renderpass\n");
                 return renderpass.lock();
             }
         }
     }else{
-        renderpassRegistry.resize(shaderGroup+1);
+        renderpassRegistry.resize(group->index+1);
     }
     //create new renderpass,register it, and return a pointer to it
     RenderPass* tmpRender = new RenderPass;
     tmpRender->format = format;
-    tmpRender->renderpass = CreateRenderPass(format,device);
-    tmpRender->shaderGroup = shaderGroup;
+    tmpRender->renderpass = _CreateRenderPass(format,device);
+    tmpRender->group = group;
     tmpRender->device = device->device;
 
     std::shared_ptr<RenderPass> tmpPass = std::shared_ptr<RenderPass>(tmpRender,DeleteRenderpass);
-    renderpassRegistry[shaderGroup].push_back(tmpPass);
+    renderpassRegistry[group->index].push_back(std::weak_ptr<RenderPass>(tmpPass));
     printf("Createing new renderpass\n");
     return tmpPass;
 }
@@ -100,16 +114,3 @@ void DestroyRenderpasses(){
         }
     }
 }
-
-// void CreateRenderPass(Window** win,unsigned int windowCount, Device* device,VkRenderPass* renderPass){
-//     _CreateRenderPass(win[0],device,renderPass);//win is needed for formats, and all windows should have the same format
-//     //create framebuffers
-//     for(unsigned int i = 0;i < windowCount;i++){
-//         //does nothing for now
-//         CreateFramebuffers((*device).device,renderPass,1,win[i]);
-//     }
-// }
-//for the future
-// void CreateRenderPasses(Window* win,unsigned int windowCount, Device* device,VkRenderPass* renderPass){
-
-// }
