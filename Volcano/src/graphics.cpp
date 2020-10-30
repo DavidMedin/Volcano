@@ -68,10 +68,7 @@ VkShaderModule CreateShaderModule(Device* device,char* code,unsigned int codeSiz
 
 // void CreateShader(Device device,VkRenderPass renderpass, SwapChain swap,const char* vertexShader,const char* fragmentShader, Shader* shad){
 Shader::Shader(Device* device,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader){
-    // *shad = malloc(sizeof(struct Shader));
-    // Shader deShad = *shad;
     this->device = device;
-    // this->renderpass = renderpass;
     this->group = shaderGroup;
     cmdPool = CreateCommandPool(this->device->device,&device->families);
     pipelineLayout = CreatePipeLayout(device);
@@ -212,20 +209,6 @@ VkPipelineLayout CreatePipeLayout(Device* device){
 }
 
 VkPipeline CreateGraphicsPipeline(Device* device,VkPipelineLayout layout, VkRenderPass renderPass,VkExtent2D viewExtent,Shader* shad){
-    //read the files
-    // char* fragmentCode;
-    // unsigned int fragmentSize=0;
-    // char* vertexCode;
-    // unsigned int vertexSize=0;
-    // //PineGL/src/shaders/fragment.spv
-    // //PineGL/src/shaders/vertex.spv
-    // if(!ReadTheFile("Volcano/src/shaders/fragment.spv",&fragmentCode,&fragmentSize)) return 0;
-    // if(!ReadTheFile("Volcano/src/shaders/vertex.spv",&vertexCode,&vertexSize)) return 0;
-    // //create the shader modules (giving vulkan the code?)
-    // VkShaderModule shaderModules[2] = {CreateShaderModule(device,fragmentCode,fragmentSize),CreateShaderModule(device,vertexCode,vertexSize)};
-    // if(shaderModules[0] == NULL || shaderModules[1] == NULL){
-    //     Error("one of the shader modules are bad\n");
-    // }
     //assign the shader stage (vertexShaderMod to vertex shader stage)
     VkPipelineShaderStageCreateInfo shaderStages[2] = {{},{}};
     VkShaderStageFlagBits bits[2] = {VK_SHADER_STAGE_VERTEX_BIT,VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -329,9 +312,6 @@ VkPipeline CreateGraphicsPipeline(Device* device,VkPipelineLayout layout, VkRend
         Error("    Graphics Pipeline create failed\n");
     }
 
-    // for(unsigned int i = 0;i < 2;i++){
-    //     vkDestroyShaderModule(device,shaderModules[i],NULL);
-    // }
     return result;
 }
 
@@ -540,15 +520,6 @@ void SwapChain::Recreate(){
     if(!CreateImageViews(device->device,imageCount,images,&swapDets.formats[chosenFormat],&imageViews)){
 		Error("Couldn't create image views!\n");
 	}
-    //renderpass refresh
-    // for(auto shad : shadList){
-    //     frame->renderpass = CreateRenderpass(this->GetFormat(),device,frame->renderpass->shaderGroup);
-    //     //delete/create new framebuffers
-    //     for(auto framebuffer : frame->framebuffers){
-    //         vkDestroyFramebuffer(device->device,framebuffer,NULL);
-    //     }
-    //     CreateFramebuffers(device->device,frame->renderpass->renderpass,imageViews,imageCount,swapExtent,&frame->framebuffers);
-    // }
     for(auto shad: shadList){
         for(auto command: shad->commands){
             if(command->swapchain == this){
@@ -568,38 +539,8 @@ void SwapChain::Recreate(){
             }
         }
     }
-    //need lists of like render passes in format with different shader specs
-    //each shader and struct framebuffer is attached to a list of those render passes
-    //when refreshing swapchain check if shader spec and format is already existing and use that rather than creating a new one
 }
 
-
-// void SwapChain::RegisterRenderPasses(std::initializer_list<std::shared_ptr<RenderPass>> renderpasses){
-//     for(auto renderpass : renderpasses){
-//         Framebuffer* tmpFrame = new Framebuffer;
-//         // this->renderpasses.push_back(renderpass);
-//         tmpFrame->renderpass = renderpass;
-//         tmpFrame->framebuffers.resize(imageCount);
-//         // for(unsigned int i = 0; i < imageCount;i++){
-//         //     VkFramebuffer frame;
-//         //     VkFramebufferCreateInfo frameInfo ={};
-// 		// 	frameInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-// 		// 	frameInfo.renderPass = renderpass->renderpass;//framebuffer must be compatible with this render pass. neat
-// 		// 	frameInfo.attachmentCount = 1;
-// 		// 	frameInfo.pAttachments = &imageViews[i];
-// 		// 	frameInfo.width = swapExtent.width;
-// 		// 	frameInfo.height = swapExtent.height;
-// 		// 	frameInfo.layers = 1;
-//         //     if(vkCreateFramebuffer(device->device,&frameInfo,NULL,&frame) != VK_SUCCESS){
-// 		// 		Error("    framebuffer create failed\n");
-// 		// 		return;
-// 		// 	}
-//         //     tmpFrame->framebuffers[i] = frame;
-//         // }
-//         CreateFramebuffers(device->device,renderpass->renderpass,imageViews,imageCount,swapExtent,&tmpFrame->framebuffers);
-//         frames.push_back(tmpFrame);
-//     }
-// }
 
 VkFormat SwapChain::GetFormat(){
     return swapDets.formats[chosenFormat].format;

@@ -16,7 +16,15 @@ void Shutdown() {
 	DestroyGLFW();
 }
 
+struct Test{
+	int hi;
+	char bye;
+};
+
 int main() {
+
+
+
 	InitVolcano();
 	device = new Device();
 
@@ -28,11 +36,17 @@ int main() {
 	window = new Window("TestWindow",device);
 	otherWindow = new Window("otherWindow", device);
 
+	//Create vertex data
+	Test data;
+	data.hi = 1;
+	data.bye = 'b';
+	CreateVertexBuffer<Test,int,char>(&data,std::make_tuple(&data.hi,&data.bye),0,0,BufferRate::PER_VERTEX);
+
 	//game loop
 	double afterTime = 0;
 	double beforeTime = 0;
 	double dt = 0;
-	while (!glfwWindowShouldClose(window->window)) {
+	while (!glfwWindowShouldClose(window->window) && !glfwWindowShouldClose(otherWindow->window)) {
 		//get delta time
 		afterTime = glfwGetTime();
 		dt = afterTime - beforeTime;

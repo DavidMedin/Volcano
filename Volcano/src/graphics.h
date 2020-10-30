@@ -49,14 +49,7 @@ struct Shader{
 	void RegisterSwapChain(SwapChain* swap);
 	void DestroySwapChain(SwapChain* swap);
 	void DrawFrame(SwapChain* window);
-	// void RemoveSwapChain();//need to be done
-	// void RecalculateSwapchain(SwapChain* swap);
 };
-
-// struct Framebuffer{
-// 	std::shared_ptr<RenderPass> renderpass;
-// 	std::vector<VkFramebuffer> framebuffers;
-// };
 
 struct SwapChain{
 	Device* device;
@@ -75,29 +68,18 @@ struct SwapChain{
 	VkImage* images;
 	VkImageView* imageViews;
 
-	// std::list<Shader*> shaders;//shaders to recreate on recreation
-	// std::list<Framebuffer*> frames;
 	SwapChain(Device* device,VkSurfaceKHR surface);
 	~SwapChain();
-	// void RegisterRenderPasses(std::initializer_list<ShaderGroup*> renderpasses);
 	void Recreate();
-	// void RecalcuateRenderPasses();
-
 	VkFormat GetFormat();
 };
 
 
 
 int ReadTheFile(const char* path,char** buff,unsigned int* buffSize);
-// void CreateRenderPass(Window win, Device* device,VkRenderPass* renderPass);
-
-
-// void CreateShader(Device device,VkRenderPass renderpass, SwapChain* swap, VkShaderModule vertexShader,VkShaderModule fragmentShader, Shader* shad);
 VkPipelineLayout CreatePipeLayout(Device* device);
 VkPipeline CreateGraphicsPipeline(Device* device,VkPipelineLayout layout, VkRenderPass renderPass,VkExtent2D viewExtent,Shader* shad);
 
 VkShaderModule CreateShaderModule(Device* device,char* code,unsigned int codeSize);
 void DestroyShader(Device* device, Shader* shad);
 void DestroyShaderModule();//need to be made
-// void CreateShader(Device device,VkRenderPass renderpass, SwapChain swap,const char* vertexShader,const char* fragmentShader, Shader* shad);
-// int CreateSwapChain(Device* device,VkSurfaceKHR surface, SwapChain* swapChain);
