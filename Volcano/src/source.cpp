@@ -32,7 +32,7 @@ int main() {
 	Test data;
 	data.hi = 1;
 	data.bye = glm::vec2(1,2);
-	CreateVertexBuffer<Test,int,glm::vec2>(&data,{&data.hi,&data.bye},0,0,BufferRate::PER_VERTEX);
+	CreateVertexBuffer(0,0,BufferRate::PER_VERTEX,&data,&data.hi,&data.bye);
 
 
 	ShaderGroup group;//will contain description of renderpass in the future

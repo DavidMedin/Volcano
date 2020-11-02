@@ -36,44 +36,30 @@ VkFormat GetTypeFormat(){
 }
 
 template<class structType, class Last>
-void Something(std::vector<VkVertexInputAttributeDescription>* vec, structType* inStruct, std::vector<void*>* list, unsigned int bufferLoc,unsigned int beginLoc,unsigned int index){
+void Something(std::vector<VkVertexInputAttributeDescription>* vec,  unsigned int bufferLoc,unsigned int beginLoc,unsigned int index,structType* inStruct,Last* last){
 	//the last thing, same function as Something but no recurse
-	unsigned int i = 0;
-	for(auto member : *list){
-		if(index == i){
-			//does something using Last
-			VkVertexInputAttributeDescription desc = {0};
-			desc.binding = bufferLoc;
-			desc.location = beginLoc+i;
-			desc.format = GetTypeFormat<Last>();
-			desc.offset = unsigned int((size_t)member-(size_t)inStruct);
-			vec->push_back(desc);
-		}
-		i++;
-	}
+	VkVertexInputAttributeDescription desc = {0};
+	desc.binding = bufferLoc;
+	desc.location = beginLoc+index;
+	desc.format = GetTypeFormat<Last>();
+	desc.offset = unsigned int((size_t)last-(size_t)inStruct);
+	vec->push_back(desc);
 }
 
-template <class structType, class First,class Second, class ...Rest>//second is to solve ambiguity
-void Something(std::vector<VkVertexInputAttributeDescription>* vec, structType* inStruct, std::vector<void*>* list, unsigned int bufferLoc,unsigned int beginLoc,unsigned int index){
-	unsigned int i = 0;
-	for(auto member : *list){
-		if(index == i){
-			//does something using First
-			VkVertexInputAttributeDescription desc = {0};
-			desc.binding = bufferLoc;
-			desc.location = beginLoc+i;
-			desc.format = GetTypeFormat<First>();
-			desc.offset = unsigned int((size_t)member-(size_t)inStruct);
-			vec->push_back(desc);
-			Something<structType,Second,Rest...>(vec,inStruct,list,bufferLoc,beginLoc,index+1);
-		}
-		i++;
-	}
+template <class structType, class First, class ...Rest>//second is to solve ambiguity
+void Something(std::vector<VkVertexInputAttributeDescription>* vec,  unsigned int bufferLoc,unsigned int beginLoc,unsigned int index,structType* inStruct,First* first, Rest*... rest){
+	VkVertexInputAttributeDescription desc = {0};
+	desc.binding = bufferLoc;
+	desc.location = beginLoc+index;
+	desc.format = GetTypeFormat<First>();
+	desc.offset = unsigned int((size_t)first-(size_t)inStruct);
+	vec->push_back(desc);
+	Something<structType,Rest...>(vec,bufferLoc,beginLoc,index+1,inStruct,rest...);
 }
 
 
 template <class structType, class ...TypesT>
-void CreateVertexBuffer(structType* inStruct, std::initializer_list<void*> list, unsigned int bufferLoc,unsigned int beginLoc,BufferRate rate){
+void CreateVertexBuffer(unsigned int bufferLoc,unsigned int beginLoc,BufferRate rate,structType* inStruct, TypesT*... data){
 	VkVertexInputBindingDescription bindingDesc = {0};
 	bindingDesc.binding = bufferLoc;
 	bindingDesc.stride = sizeof(inStruct);
@@ -89,8 +75,5 @@ void CreateVertexBuffer(structType* inStruct, std::initializer_list<void*> list,
 	}
 
 	std::vector<VkVertexInputAttributeDescription> inputDescs;
-	std::vector<void*> listVec = std::vector<void*>(list);
-	Something<structType,TypesT...>(&inputDescs,inStruct,&listVec,bufferLoc,beginLoc,0);
-
-	
+	Something<structType,TypesT...>(&inputDescs,bufferLoc,beginLoc,0,inStruct,data...);
 }
