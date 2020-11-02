@@ -18,7 +18,7 @@ void Shutdown() {
 
 struct Test{
 	int hi;
-	char bye;
+	glm::vec2 bye;
 };
 
 int main() {
@@ -28,7 +28,14 @@ int main() {
 	InitVolcano();
 	device = new Device();
 
-	ShaderGroup group;
+	//Create vertex data
+	Test data;
+	data.hi = 1;
+	data.bye = glm::vec2(1,2);
+	CreateVertexBuffer<Test,int,glm::vec2>(&data,{&data.hi,&data.bye},0,0,BufferRate::PER_VERTEX);
+
+
+	ShaderGroup group;//will contain description of renderpass in the future
 	group.index = 0;
 	shad = new Shader(device,&group,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
 
@@ -36,11 +43,6 @@ int main() {
 	window = new Window("TestWindow",device);
 	otherWindow = new Window("otherWindow", device);
 
-	//Create vertex data
-	Test data;
-	data.hi = 1;
-	data.bye = 'b';
-	CreateVertexBuffer<Test,int,char>(&data,{&data.hi,&data.bye},0,0,BufferRate::PER_VERTEX);
 
 	//game loop
 	double afterTime = 0;

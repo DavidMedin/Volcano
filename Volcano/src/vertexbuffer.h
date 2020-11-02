@@ -7,6 +7,8 @@
 #include "globalVulkan.h"
 #include "errorCatch.h"
 
+#define GETTYPE(T) typeid(T).hash_code()
+
 enum BufferRate{
 	PER_VERTEX,
 	PER_INSTANCE
@@ -14,22 +16,23 @@ enum BufferRate{
 
 template <class T>
 VkFormat GetTypeFormat(){
-	if(T == glm::vec2){
-		Error("Yay\n");
+	size_t type = GETTYPE(T);
+	if(type == GETTYPE(float)){
+		return VK_FORMAT_R32_SFLOAT;
+	}else if(type == GETTYPE(int)){
+		return VK_FORMAT_R32_SINT;
+	}else if(type == GETTYPE(char)){
+		return VK_FORMAT_R32_SINT;
+	}else if(type == GETTYPE(glm::vec2)){
+		return VK_FORMAT_R32G32_SFLOAT;
+	}else if(type == GETTYPE(glm::vec3)){
+		return VK_FORMAT_R32G32B32_SFLOAT;
+	}else if(type == GETTYPE(glm::vec4)){
+		return VK_FORMAT_R32G32B32A32_SFLOAT;
+	}else{
+		Error("oh no! \"%s\" is not a valid argument for GetTypeFormat!\n",typeid(T).name());
+		return VK_FORMAT_UNDEFINED;
 	}
-	// switch(T){
-	// 	case float:
-	// 		return VK_FORMAT_R32_SFLOAT;
-	// 	case glm::vec2:
-	// 		return VK_FORMAT_R32G32_SFLOAT;
-	// 	case glm::vec3:
-	// 		return VK_FORMAT_R32G32B32_SFLOAT;
-	// 	case glm::vec4:
-	// 		return VK_FORMAT_R32G32B32A32_SFLOAT;
-	// 	default:
-	// 		Error("That type is not supported!\n");
-	// 		return VK_NULL;
-	// }
 }
 
 template<class structType, class Last>
@@ -43,7 +46,7 @@ void Something(std::vector<VkVertexInputAttributeDescription>* vec, structType* 
 			desc.binding = bufferLoc;
 			desc.location = beginLoc+i;
 			desc.format = GetTypeFormat<Last>();
-			desc.offset = (size_t)member-(size_t)inStruct;
+			desc.offset = unsigned int((size_t)member-(size_t)inStruct);
 			vec->push_back(desc);
 		}
 		i++;
@@ -86,15 +89,8 @@ void CreateVertexBuffer(structType* inStruct, std::initializer_list<void*> list,
 	}
 
 	std::vector<VkVertexInputAttributeDescription> inputDescs;
-	// unsigned int i = 0;
-	// for(auto member : list){
-	// 	VkVertexInputAttributeDescription desc = {0};
-	// 	desc.binding = bufferLoc;
-	// 	desc.location = beginLoc+i;
-	// 	desc.format = GetTypeFormat<typeid(member)>();
-	// 	desc.offset = member-inStruct;
-	// 	i++;
-	// }
 	std::vector<void*> listVec = std::vector<void*>(list);
 	Something<structType,TypesT...>(&inputDescs,inStruct,&listVec,bufferLoc,beginLoc,0);
+
+	
 }
