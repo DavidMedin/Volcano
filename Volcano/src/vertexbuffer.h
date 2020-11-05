@@ -6,6 +6,7 @@
 
 #include "globalVulkan.h"
 #include "errorCatch.h"
+#include "graphics.h"
 
 #define GETTYPE(T) typeid(T).hash_code()
 
@@ -13,6 +14,11 @@ enum BufferRate{
 	PER_VERTEX,
 	PER_INSTANCE
 };
+
+// struct VertexBuffer{
+// 	VkVertexInputBindingDescription bindDesc;
+// 	std::vector<VkVertexInputAttributeDescription> attribDescs;
+// };
 
 template <class T>
 VkFormat GetTypeFormat(){
@@ -36,7 +42,7 @@ VkFormat GetTypeFormat(){
 }
 
 template<class structType, class Last>
-void Something(std::vector<VkVertexInputAttributeDescription>* vec,  unsigned int bufferLoc,unsigned int beginLoc,unsigned int index,structType* inStruct,Last* last){
+int Something(std::vector<VkVertexInputAttributeDescription>* vec,  unsigned int bufferLoc,unsigned int beginLoc,unsigned int index,structType* inStruct,Last* last){
 	//the last thing, same function as Something but no recurse
 	VkVertexInputAttributeDescription desc = {0};
 	desc.binding = bufferLoc;
@@ -44,22 +50,23 @@ void Something(std::vector<VkVertexInputAttributeDescription>* vec,  unsigned in
 	desc.format = GetTypeFormat<Last>();
 	desc.offset = unsigned int((size_t)last-(size_t)inStruct);
 	vec->push_back(desc);
+	return desc.offset+sizeof(Last);
 }
 
 template <class structType, class First, class ...Rest>//second is to solve ambiguity
-void Something(std::vector<VkVertexInputAttributeDescription>* vec,  unsigned int bufferLoc,unsigned int beginLoc,unsigned int index,structType* inStruct,First* first, Rest*... rest){
+int Something(std::vector<VkVertexInputAttributeDescription>* vec,  unsigned int bufferLoc,unsigned int beginLoc,unsigned int index,structType* inStruct,First* first, Rest*... rest){
 	VkVertexInputAttributeDescription desc = {0};
 	desc.binding = bufferLoc;
 	desc.location = beginLoc+index;
 	desc.format = GetTypeFormat<First>();
 	desc.offset = unsigned int((size_t)first-(size_t)inStruct);
 	vec->push_back(desc);
-	Something<structType,Rest...>(vec,bufferLoc,beginLoc,index+1,inStruct,rest...);
+	return Something<structType,Rest...>(vec,bufferLoc,beginLoc,index+1,inStruct,rest...);
 }
 
 
 template <class structType, class ...TypesT>
-void CreateVertexBuffer(unsigned int bufferLoc,unsigned int beginLoc,BufferRate rate,structType* inStruct, TypesT*... data){
+void CreateVertexBuffer(Shader* shad, unsigned int bufferLoc,unsigned int beginLoc,BufferRate rate,structType* inStruct, TypesT*... data){
 	VkVertexInputBindingDescription bindingDesc = {0};
 	bindingDesc.binding = bufferLoc;
 	bindingDesc.stride = sizeof(inStruct);
@@ -74,6 +81,18 @@ void CreateVertexBuffer(unsigned int bufferLoc,unsigned int beginLoc,BufferRate 
 			Error("That BufferRate is not supported!\n");
 	}
 
-	std::vector<VkVertexInputAttributeDescription> inputDescs;
-	Something<structType,TypesT...>(&inputDescs,bufferLoc,beginLoc,0,inStruct,data...);
+	// std::vector<VkVertexInputAttributeDescription> inputDescs;
+	VertexBuffer* buff = new VertexBuffer;
+	buff->bindDesc = bindingDesc;
+	int size = Something<structType,TypesT...>(&buff->attribDescs,bufferLoc,beginLoc,0,inStruct,data...);
+	shad->RegisterVertexBuffer(buff);
+	//create the buffer
+	VkBufferCreateInfo buffInfo = {0};
+	buffInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	buffInfo.size = size;
+	buffInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	buffInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;//cause only for graphics queue
+	if(vkCreateBuffer(shad->device->device,&buffInfo,NULL,&buff->buff) != VK_SUCCESS){
+		Error("Couldn't create a vertex buffer!\n");
+	}
 }

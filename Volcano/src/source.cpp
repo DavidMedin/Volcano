@@ -16,10 +16,10 @@ void Shutdown() {
 	DestroyGLFW();
 }
 
-struct Test{
-	int hi;
-	glm::vec2 bye;
-};
+struct Test_t{
+	glm::vec2 pos;
+	glm::vec3 color;
+}Test;
 
 int main() {
 
@@ -28,17 +28,17 @@ int main() {
 	InitVolcano();
 	device = new Device();
 
-	//Create vertex data
-	Test data;
-	data.hi = 1;
-	data.bye = glm::vec2(1,2);
-	CreateVertexBuffer(0,0,BufferRate::PER_VERTEX,&data,&data.hi,&data.bye);
+	// //Create vertex data
+	// Test data[2] ={ {1,{1,2} },
+	// 			    {2,{2,3} }};
+	// printf("%d\n",sizeof(*((Test*)data)));
 
 
 	ShaderGroup group;//will contain description of renderpass in the future
 	group.index = 0;
 	shad = new Shader(device,&group,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
 
+	CreateVertexBuffer(shad,0,0,BufferRate::PER_VERTEX,&Test,&Test.pos,&Test.color);
 
 	window = new Window("TestWindow",device);
 	otherWindow = new Window("otherWindow", device);

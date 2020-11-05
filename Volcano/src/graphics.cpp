@@ -179,6 +179,16 @@ void Shader::DrawFrame(SwapChain* swap){
     }
 }
 
+void Shader::RegisterVertexBuffer(VertexBuffer*  buff){
+    vertBuffs.push_back(buff);
+    //rebuild graphics pipeline with updated vertex buffer list
+    for(auto command : commands){
+        vkDestroyPipeline(device->device,command->graphicsPipeline,NULL);
+        command->graphicsPipeline = CreateGraphicsPipeline(device,pipelineLayout,command->renderpass->renderpass,command->swapchain->swapExtent,this);
+        FillCommandBuffers(command->swapchain->swapExtent,&command->frames,command->graphicsPipeline,command->renderpass->renderpass,command->drawCommands);
+    }
+}
+
 
 Shader::~Shader(){
     for(unsigned int i = 0; i < shadModCount;i++){ 
@@ -223,8 +233,21 @@ VkPipeline CreateGraphicsPipeline(Device* device,VkPipelineLayout layout, VkRend
     //describe the vertex input (like bindings and attributes)
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType =  VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+
+    unsigned int attribCount = 0;
+    vertexInputInfo.vertexBindingDescriptionCount = (unsigned int)shad->vertBuffs.size();
+    std::vector<VkVertexInputBindingDescription> tmpBindings;
+    std::vector<VkVertexInputAttributeDescription> tmpAttribs;
+    for(auto buff : shad->vertBuffs){
+        tmpBindings.push_back(buff->bindDesc);
+        for(auto attrib : buff->attribDescs){
+            tmpAttribs.push_back(attrib);
+            attribCount++;
+        }
+    }
+    vertexInputInfo.pVertexBindingDescriptions=tmpBindings.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = attribCount;
+    vertexInputInfo.pVertexAttributeDescriptions = tmpAttribs.data();
     //input assembly, triangles vs lines
     VkPipelineInputAssemblyStateCreateInfo inputAssInfo = {};
     inputAssInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

@@ -14,7 +14,14 @@
 // #include "window.h"
 #include "devices.h"
 #include "renderpass.h"
+// #include "vertexbuffer.h"
 #define MAX_FRAMES_IN_FLIGHT 4
+
+struct VertexBuffer{
+	VkBuffer buff;
+	VkVertexInputBindingDescription bindDesc;
+	std::vector<VkVertexInputAttributeDescription> attribDescs;
+};
 
 struct SwapChain;
 struct Draw{
@@ -44,8 +51,11 @@ struct Shader{
 	VkCommandPool cmdPool;
 	std::list<Draw*> commands;
 
+	std::vector<VertexBuffer*> vertBuffs;
+
 	Shader(Device* device,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
 	~Shader();
+	void RegisterVertexBuffer(VertexBuffer* buff);
 	void RegisterSwapChain(SwapChain* swap);
 	void DestroySwapChain(SwapChain* swap);
 	void DrawFrame(SwapChain* window);
