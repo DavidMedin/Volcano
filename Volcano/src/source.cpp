@@ -23,7 +23,13 @@ struct Test_t{
 
 int main() {
 
-
+	/*
+	trello isn't working so I am writing here
+	-shader vertexbuffer vector to list
+	-list of shaders a vertexbuffer is in (in vertexbuffer struct)
+	-destroyVolcano to dealloc all volcano objects, and destroy all vulkan objects
+		-need a list of everything somehow
+	*/
 
 	InitVolcano();
 	device = new Device();

@@ -84,7 +84,7 @@ void DestroyDebugMessenger(
 
 void CreateDebugInfo(VkDebugUtilsMessengerCreateInfoEXT* debugInfo) {
 	debugInfo->sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;//this struct NEEDS to have this define as its type
-	debugInfo->messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT; //defines the severity of the message this function will accept
+	debugInfo->messageSeverity = /*VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | */VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT; //defines the severity of the message this function will accept
 	debugInfo->messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT; // defines	the mesage types this functions will accept
 	debugInfo->pfnUserCallback = DebugCallback;//define the function that we are to give to Vulkan
 	debugInfo->pUserData = NULL;
