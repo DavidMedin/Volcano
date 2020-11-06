@@ -95,7 +95,7 @@ void Shader::RegisterSwapChain(SwapChain* swap){
     command->frames.resize(swap->imageCount);
     CreateFramebuffers(device->device,command->renderpass->renderpass,swap->imageViews,swap->imageCount,swap->swapExtent,&command->frames);
     command->drawCommands = CreateCommandBuffers(device,cmdPool,swap->imageCount);
-    FillCommandBuffers(swap->swapExtent,&command->frames,command->graphicsPipeline,command->renderpass->renderpass,command->drawCommands);
+    FillCommandBuffers(swap->swapExtent,&command->frames,command->graphicsPipeline,command->renderpass->renderpass,this,command->drawCommands);
 
     command->imageFence.resize(swap->imageCount,VK_NULL_HANDLE);
     command->available.resize(MAX_FRAMES_IN_FLIGHT);
@@ -180,12 +180,22 @@ void Shader::DrawFrame(SwapChain* swap){
 }
 
 void Shader::RegisterVertexBuffer(VertexBuffer*  buff){
+    if(vertBuffs.size() != 0){
+        if(vertNum != buff->vertexNum){
+            Error("WA-HA-HOO! WHY is the number of vertices in this vertex buffer NOT equal the vertex number of the shader!?\n");
+        }
+    }
+    else{
+        vertNum = buff->vertexNum;
+    }
     vertBuffs.push_back(buff);
+    buff->shaders.push_back(this);
+    buff->uses++;
     //rebuild graphics pipeline with updated vertex buffer list
     for(auto command : commands){
         vkDestroyPipeline(device->device,command->graphicsPipeline,NULL);
         command->graphicsPipeline = CreateGraphicsPipeline(device,pipelineLayout,command->renderpass->renderpass,command->swapchain->swapExtent,this);
-        FillCommandBuffers(command->swapchain->swapExtent,&command->frames,command->graphicsPipeline,command->renderpass->renderpass,command->drawCommands);
+        FillCommandBuffers(command->swapchain->swapExtent,&command->frames,command->graphicsPipeline,command->renderpass->renderpass,this,command->drawCommands);
     }
 }
 
@@ -198,6 +208,13 @@ Shader::~Shader(){
 	vkDestroyPipelineLayout(device->device,pipelineLayout,NULL);
     if(commands.size() != 0){
         Error("Didn't destroy all swapchains. Please destroy them before the shader.\n");
+    }
+    for(auto buff : vertBuffs){
+        buff->uses--;
+        if(buff->uses == 0){
+            vertBuffs.remove(buff);
+            delete buff;
+        }
     }
 }
 
@@ -557,7 +574,7 @@ void SwapChain::Recreate(){
                 CreateFramebuffers(device->device,command->renderpass->renderpass,imageViews,imageCount,swapExtent,&command->frames);
 
                 //fill the command buffers
-                FillCommandBuffers(swapExtent,&command->frames,command->graphicsPipeline,command->renderpass->renderpass,command->drawCommands);
+                FillCommandBuffers(swapExtent,&command->frames,command->graphicsPipeline,command->renderpass->renderpass,shad,command->drawCommands);
 
             }
         }

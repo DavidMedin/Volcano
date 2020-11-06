@@ -9,6 +9,7 @@ void Shutdown() {
 
 	DestoryWindow(device,window);
 	DestoryWindow(device,otherWindow);
+	
 	delete shad;
 	vkDestroyDevice(device->device,NULL);
 	GetCurrentInstance()->~Instance();
@@ -23,28 +24,26 @@ struct Test_t{
 
 int main() {
 
-	/*
-	trello isn't working so I am writing here
-	-shader vertexbuffer vector to list
-	-list of shaders a vertexbuffer is in (in vertexbuffer struct)
-	-destroyVolcano to dealloc all volcano objects, and destroy all vulkan objects
-		-need a list of everything somehow
-	*/
 
 	InitVolcano();
 	device = new Device();
 
-	// //Create vertex data
-	// Test data[2] ={ {1,{1,2} },
-	// 			    {2,{2,3} }};
-	// printf("%d\n",sizeof(*((Test*)data)));
-
-
 	ShaderGroup group;//will contain description of renderpass in the future
 	group.index = 0;
 	shad = new Shader(device,&group,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
+	
 
-	CreateVertexBuffer(shad,0,0,BufferRate::PER_VERTEX,&Test,&Test.pos,&Test.color);
+	VertexBuffer* buff = CreateVertexBuffer(shad,3,0,0,BufferRate::PER_VERTEX,&Test,&Test.pos,&Test.color);
+	
+	std::vector<Test_t> dataVec = {
+		{{0,0.5f},{1,0,0}},
+		{{0.5f,-0.5f},{0,1,0}},
+		{{-0.5f,-0.5f},{0,0,1}}
+	};
+	void* data;
+	buff->MapData(&data);
+	memcpy(data,dataVec.data(),sizeof(Test_t)*3);
+	buff->UnMapData();
 
 	window = new Window("TestWindow",device);
 	otherWindow = new Window("otherWindow", device);

@@ -44,7 +44,7 @@ void CreateCommandBuffers(Device* device,VkCommandPool commandPool,unsigned int 
 }
 
 
-void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* frameBuffs,VkPipeline graphicsPipeline,VkRenderPass renderPass,std::vector<VkCommandBuffer>* cmdBuffs){
+void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* frameBuffs,VkPipeline graphicsPipeline,VkRenderPass renderPass,Shader* shad,std::vector<VkCommandBuffer>* cmdBuffs){
     std::vector<VkCommandBuffer> deCmdBuffs = *cmdBuffs;
     std::vector<VkFramebuffer> deFrameBuffs = *frameBuffs;
     if(deFrameBuffs.size() != deCmdBuffs.size()){
@@ -74,13 +74,25 @@ void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* f
         //this is the only thing that is being 'recorded' here
         vkCmdBeginRenderPass(deCmdBuffs[i],&renderStartInfo,VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(deCmdBuffs[i],VK_PIPELINE_BIND_POINT_GRAPHICS,graphicsPipeline);
-        vkCmdDraw(deCmdBuffs[i],3,1,0,0);
+
+        VkBuffer* vertBuffArray = (VkBuffer*)malloc(sizeof(VkBuffer)*shad->vertBuffs.size());
+        VkDeviceSize* offsets = (VkDeviceSize*)calloc(1,sizeof(VkDeviceSize)*shad->vertBuffs.size());//should be zero?
+        unsigned int index = 0;
+        for(auto buff : shad->vertBuffs){
+            vertBuffArray[i] = buff->buff;
+            index++;
+        }
+
+        vkCmdBindVertexBuffers(deCmdBuffs[i],0,shad->vertBuffs.size(),vertBuffArray,offsets);
+        vkCmdDraw(deCmdBuffs[i],shad->vertNum,1,0,0);
         //end the cmd recording
         vkCmdEndRenderPass(deCmdBuffs[i]);
         if(vkEndCommandBuffer(deCmdBuffs[i]) != VK_SUCCESS){
             Error("end command buffer : %d failed\n",i);
             return;
         }
+        free(vertBuffArray);
+        free(offsets);
     }
 }
 

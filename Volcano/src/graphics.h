@@ -17,10 +17,29 @@
 // #include "vertexbuffer.h"
 #define MAX_FRAMES_IN_FLIGHT 4
 
+struct Shader;
 struct VertexBuffer{
+	std::list<Shader*> shaders;
+	unsigned int uses;
+
+	Device* device;
 	VkBuffer buff;
+	VkDeviceMemory buffMem;
+	uint64_t memSize;
+
+	//default is num of first 
+	unsigned int vertexNum;
+
 	VkVertexInputBindingDescription bindDesc;
 	std::vector<VkVertexInputAttributeDescription> attribDescs;
+
+	//to write use:
+	void MapData(void** data);//then
+	void UnMapData();
+	//OR:
+	void WriteData();
+	
+	~VertexBuffer();
 };
 
 struct SwapChain;
@@ -51,7 +70,8 @@ struct Shader{
 	VkCommandPool cmdPool;
 	std::list<Draw*> commands;
 
-	std::vector<VertexBuffer*> vertBuffs;
+	unsigned int vertNum;
+	std::list<VertexBuffer*> vertBuffs;
 
 	Shader(Device* device,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
 	~Shader();
