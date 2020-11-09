@@ -92,7 +92,7 @@ VertexBuffer* CreateVertexBuffer(Shader* shad,unsigned int vertNum, unsigned int
 	//create the buffer
 	VkBufferCreateInfo buffInfo = {0};
 	buffInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffInfo.size = sizeof(structType);
+	buffInfo.size = sizeof(structType)*vertNum;
 	buff->memSize = sizeof(structType)*vertNum;
 	buffInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 	buffInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;//cause only for graphics queue
@@ -120,7 +120,7 @@ VertexBuffer* CreateVertexBuffer(Shader* shad,unsigned int vertNum, unsigned int
 	VkMemoryAllocateInfo allocInfo = {0};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequire.size;
-	allocInfo.memoryTypeIndex = typeIndex;
+	allocInfo.memoryTypeIndex = (unsigned int)typeIndex;
 
 	if(vkAllocateMemory(shad->device->device,&allocInfo,NULL,&buff->buffMem) != VK_SUCCESS){
 		Error("Couldn't allocate memory for the vertex buffer!\n");
