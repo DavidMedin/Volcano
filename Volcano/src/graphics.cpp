@@ -209,12 +209,16 @@ Shader::~Shader(){
     if(commands.size() != 0){
         Error("Didn't destroy all swapchains. Please destroy them before the shader.\n");
     }
+    std::list<VertexBuffer*> delList;
     for(auto buff : vertBuffs){
         buff->uses--;
         if(buff->uses == 0){
-            vertBuffs.remove(buff);
-            delete buff;
+            delList.push_back(buff);
         }
+    }
+    for(auto buff : delList){
+        vertBuffs.remove(buff);
+        delete buff;
     }
 }
 

@@ -10,7 +10,7 @@
 #include <GLFW/glfw3.h>
 
 #include "errorCatch.h"
-#include "commandpool.h"
+// #include "commandpool.h"
 // #include "window.h"
 #include "devices.h"
 #include "renderpass.h"
@@ -18,6 +18,17 @@
 #define MAX_FRAMES_IN_FLIGHT 4
 
 struct Shader;
+
+
+VkCommandPool CreateCommandPool(VkDevice device,QueueFamilyIndex* indices);
+
+std::vector<VkCommandBuffer>* CreateCommandBuffers(Device* device,VkCommandPool commandPool,unsigned int commandBuffCount);
+
+void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* frameBuffs,VkPipeline graphicsPipeline,VkRenderPass renderPass,Shader* shad,std::vector<VkCommandBuffer>* cmdBuffs);
+
+int CreateSemaphore(VkDevice device, VkSemaphore* semaphore);
+int CreateFence(VkDevice device,VkFence* fence);
+
 struct VertexBuffer{
 	std::list<Shader*> shaders;
 	unsigned int uses;

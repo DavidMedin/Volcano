@@ -69,7 +69,7 @@ template <class structType, class ...TypesT>
 VertexBuffer* CreateVertexBuffer(Shader* shad,unsigned int vertNum, unsigned int bufferLoc,unsigned int beginLoc,BufferRate rate,structType* inStruct, TypesT*... data){
 	VkVertexInputBindingDescription bindingDesc = {0};
 	bindingDesc.binding = bufferLoc;
-	bindingDesc.stride = sizeof(inStruct);
+	bindingDesc.stride = sizeof(structType);
 	switch(rate){
 		case PER_VERTEX:
 			bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -87,13 +87,13 @@ VertexBuffer* CreateVertexBuffer(Shader* shad,unsigned int vertNum, unsigned int
 	buff->vertexNum = vertNum;
 	buff->device = shad->device;
 	buff->bindDesc = bindingDesc;
-	int size = Something<structType,TypesT...>(&buff->attribDescs,bufferLoc,beginLoc,0,inStruct,data...);
+	Something<structType,TypesT...>(&buff->attribDescs,bufferLoc,beginLoc,0,inStruct,data...);
 	shad->RegisterVertexBuffer(buff);
 	//create the buffer
 	VkBufferCreateInfo buffInfo = {0};
 	buffInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffInfo.size = size;
-	buff->memSize = size*vertNum;
+	buffInfo.size = sizeof(structType);
+	buff->memSize = sizeof(structType)*vertNum;
 	buffInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 	buffInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;//cause only for graphics queue
 	if(vkCreateBuffer(shad->device->device,&buffInfo,NULL,&buff->buff) != VK_SUCCESS){
@@ -108,13 +108,13 @@ VertexBuffer* CreateVertexBuffer(Shader* shad,unsigned int vertNum, unsigned int
 	int typeIndex = -1;
 	VkPhysicalDeviceMemoryProperties memProps;
 	vkGetPhysicalDeviceMemoryProperties(shad->device->phyDev,&memProps);
-	for(int i = 0; i < memProps.memoryTypeCount;i++){
-		if(memRequire.memoryTypeBits & (1 << i) && (memProps.memoryTypes[i].propertyFlags & properties) == properties){
+	for(int i = 0; i < (int)memProps.memoryTypeCount;i++){
+		if(memRequire.memoryTypeBits & (1 << i) && (memProps.memoryTypes[i].propertyFlags & properties)==properties){
 			typeIndex = i;
 			break;
 		}
 	}
-	if(typeIndex == -1) Error("No memory types work for this vertex buffer. Or you're just stupid\n");
+	if(typeIndex == -1) {Error("No memory types work for this vertex buffer. Or you're just stupid\n");}
 
 	//allocate memory on the GPU for the buffer
 	VkMemoryAllocateInfo allocInfo = {0};

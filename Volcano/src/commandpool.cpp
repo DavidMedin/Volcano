@@ -75,14 +75,15 @@ void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* f
         vkCmdBeginRenderPass(deCmdBuffs[i],&renderStartInfo,VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(deCmdBuffs[i],VK_PIPELINE_BIND_POINT_GRAPHICS,graphicsPipeline);
 
-        VkBuffer* vertBuffArray = (VkBuffer*)malloc(sizeof(VkBuffer)*shad->vertBuffs.size());
-        VkDeviceSize* offsets = (VkDeviceSize*)calloc(1,sizeof(VkDeviceSize)*shad->vertBuffs.size());//should be zero?
+        // VkBuffer* vertBuffArray = (VkBuffer*)malloc(sizeof(VkBuffer)*shad->vertBuffs.size());
+        // VkDeviceSize* offsets = (VkDeviceSize*)calloc(1,sizeof(VkDeviceSize)*shad->vertBuffs.size());//should be zero?
+        VkBuffer vertBuffArray[1] = {};
+        VkDeviceSize offsets[1] = {0};
         unsigned int index = 0;
         for(auto buff : shad->vertBuffs){
-            vertBuffArray[i] = buff->buff;
+            vertBuffArray[index] = buff->buff;
             index++;
         }
-
         vkCmdBindVertexBuffers(deCmdBuffs[i],0,shad->vertBuffs.size(),vertBuffArray,offsets);
         vkCmdDraw(deCmdBuffs[i],shad->vertNum,1,0,0);
         //end the cmd recording
@@ -91,8 +92,8 @@ void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* f
             Error("end command buffer : %d failed\n",i);
             return;
         }
-        free(vertBuffArray);
-        free(offsets);
+        // free(vertBuffArray);
+        // free(offsets);
     }
 }
 
