@@ -41,6 +41,7 @@ VkFormat GetTypeFormat(){
 	}
 }
 
+
 template<class structType, class Last>
 int Something(std::vector<VkVertexInputAttributeDescription>* vec,  unsigned int bufferLoc,unsigned int beginLoc,unsigned int index,structType* inStruct,Last* last){
 	//the last thing, same function as Something but no recurse

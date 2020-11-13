@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <memory>
+#include <tuple>
 
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
@@ -29,6 +30,19 @@ void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* f
 int CreateSemaphore(VkDevice device, VkSemaphore* semaphore);
 int CreateFence(VkDevice device,VkFence* fence);
 
+
+
+template<int index,class ...attribT>
+void tuple_for_mid(std::tuple<attribT*...> data){
+	
+}
+
+template<class ...attribT>
+void tuple_for(std::tuple<attribT*...> data){
+	tuple_for_mid<0>(data);
+}
+
+template<class ...attribT>
 struct VertexBuffer{
 	std::list<Shader*> shaders;
 	unsigned int uses;
@@ -43,6 +57,15 @@ struct VertexBuffer{
 
 	VkVertexInputBindingDescription bindDesc;
 	std::vector<VkVertexInputAttributeDescription> attribDescs;
+
+	std::tuple<attribT*...> data;
+
+	//give pointer to an array (just a pointer)
+	void FormatVertexBuffer(attribT*... attribData){
+		//(x,y,z)
+		//(x[0],y[0],z[0]),
+		//(x[1],y[1],z[1])	
+	}
 
 	//to write use:
 	void MapData(void** data);//then
