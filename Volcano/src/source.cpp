@@ -9,7 +9,7 @@ void Shutdown() {
 
 	DestoryWindow(device,window);
 	// DestoryWindow(device,otherWindow);
-	
+
 	delete shad;
 	vkDestroyDevice(device->device,NULL);
 	GetCurrentInstance()->~Instance();
@@ -31,25 +31,21 @@ int main() {
 	ShaderGroup group;//will contain description of renderpass in the future
 	group.index = 0;
 	shad = new Shader(device,&group,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
-	
+
 
 	VertexBuffer* buff = CreateVertexBuffer(shad,3,0,0,BufferRate::PER_VERTEX,&Test,&Test.pos,&Test.color);
-	printf("vertexbuffer: %d\n",sizeof(VertexBuffer));
-	printf("vertexdata: %d\n",sizeof(*buff));
 
-	
-	std::vector<Test_t> dataVec = {
-		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 0.0f, 1.0f}}
-	};
-	void* data;
-	buff->MapData(&data);
-	memcpy(data,dataVec.data(),sizeof(Test_t)*3);
-	buff->UnMapData();
+	//  std::vector<Test_t> dataVec = {
+	//  	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    //  {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    //  {{-0.5f, 0.5f}, {1.0f, 0.0f, 1.0f}}
+	//  };
+	std::vector<glm::vec2> pos = {{0.0f, -0.5f},{0.5f, 0.5f},{-0.5f, 0.5f}};
+	std::vector<glm::vec3> color = {{1.0f, 0.0f, 0.0f},{0.0f, 1.0f, 0.0f},{1.0f, 0.0f, 1.0f}};
+	buff->WriteData(0,pos.data(),color.data());
+
 
 	window = new Window("TestWindow",device);
-	// otherWindow = new Window("otherWindow", device);
 
 
 	//game loop

@@ -30,18 +30,6 @@ void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* f
 int CreateSemaphore(VkDevice device, VkSemaphore* semaphore);
 int CreateFence(VkDevice device,VkFence* fence);
 
-
-
-template<int index,class ...attribT>
-void tuple_for_mid(std::tuple<attribT*...> data){
-	
-}
-
-template<class ...attribT>
-void tuple_for(std::tuple<attribT*...> data){
-	tuple_for_mid<0>(data);
-}
-
 struct VertexBuffer{
 	std::list<Shader*> shaders;
 	unsigned int uses;
@@ -54,26 +42,48 @@ struct VertexBuffer{
 	//requires vertexdata to make this
 	void* formattedData;
 
-	//default is num of first 
+	//default is num of first
 	unsigned int vertexNum;
 
 	VkVertexInputBindingDescription bindDesc;
 	std::vector<VkVertexInputAttributeDescription> attribDescs;
 
-	//give pointer to an array (just a pointer)
+
+	template<class last>
+	void IterThruArgs(void* allocData,int index,unsigned int vertDex,last* lastArg){
+		memcpy((void*)(size_t(allocData) + attribDescs[index].offset + (bindDesc.stride * vertDex)), (void*)(size_t(lastArg) + sizeof(last) * vertDex), sizeof(last));
+	}
+	template< class next, class ...argsT>
+	void IterThruArgs(void* allocData,int index,unsigned int vertDex,next* nextArg,argsT*... data){
+		memcpy((void*)(size_t(allocData) + attribDescs[index].offset + (bindDesc.stride * vertDex)), (void*)(size_t(nextArg) + sizeof(next) * vertDex), sizeof(next));
+		IterThruArgs(allocData,index+1,vertDex,data...);
+	}
 	template<class ...argsT>
-	void FormatVertexBuffer(unsigned int mask,argsT*... data){
-		//(x,y,z) -> data
+	void* FormatVertexBuffer(unsigned int mask,argsT*... data){
+		//(x[],y[],z[]) -> data
 		//(x[0],y[0],z[0]),
-		//(x[1],y[1],z[1])	
+		//(x[1],y[1],z[1])
+		void* allocData = malloc(memSize);
+		for(unsigned int i = 0;i < vertexNum;i++){
+			IterThruArgs(allocData,0,i,data...);
+		}
+		return allocData;
 	}
 
 	//to write use:
 	void MapData(void** data);//then
 	void UnMapData();
 	//OR:
-	void WriteData();
-	
+	template<class ...argsT>
+	void WriteData(unsigned int mask,argsT*... data){
+		void* formatData = FormatVertexBuffer(mask,data...);
+		void* mapped;
+		MapData(&mapped);
+		memcpy(mapped,formatData,memSize);
+		UnMapData();
+		free(formatData);
+	}
+
 	~VertexBuffer();
 };
 
