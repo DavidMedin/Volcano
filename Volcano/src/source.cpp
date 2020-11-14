@@ -34,6 +34,9 @@ int main() {
 	
 
 	VertexBuffer* buff = CreateVertexBuffer(shad,3,0,0,BufferRate::PER_VERTEX,&Test,&Test.pos,&Test.color);
+	printf("vertexbuffer: %d\n",sizeof(VertexBuffer));
+	printf("vertexdata: %d\n",sizeof(*buff));
+
 	
 	std::vector<Test_t> dataVec = {
 		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},

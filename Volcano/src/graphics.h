@@ -42,7 +42,6 @@ void tuple_for(std::tuple<attribT*...> data){
 	tuple_for_mid<0>(data);
 }
 
-template<class ...attribT>
 struct VertexBuffer{
 	std::list<Shader*> shaders;
 	unsigned int uses;
@@ -52,17 +51,19 @@ struct VertexBuffer{
 	VkDeviceMemory buffMem;
 	uint64_t memSize;
 
+	//requires vertexdata to make this
+	void* formattedData;
+
 	//default is num of first 
 	unsigned int vertexNum;
 
 	VkVertexInputBindingDescription bindDesc;
 	std::vector<VkVertexInputAttributeDescription> attribDescs;
 
-	std::tuple<attribT*...> data;
-
 	//give pointer to an array (just a pointer)
-	void FormatVertexBuffer(attribT*... attribData){
-		//(x,y,z)
+	template<class ...argsT>
+	void FormatVertexBuffer(unsigned int mask,argsT*... data){
+		//(x,y,z) -> data
 		//(x[0],y[0],z[0]),
 		//(x[1],y[1],z[1])	
 	}
@@ -75,6 +76,7 @@ struct VertexBuffer{
 	
 	~VertexBuffer();
 };
+
 
 struct SwapChain;
 struct Draw{

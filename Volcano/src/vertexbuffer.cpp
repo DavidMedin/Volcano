@@ -1,5 +1,7 @@
 #include "vertexbuffer.h"
 
+
+
 VertexBuffer::~VertexBuffer(){
 	for(auto shad : shaders){
 		//should remove all refs from shaders

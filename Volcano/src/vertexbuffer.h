@@ -82,7 +82,6 @@ VertexBuffer* CreateVertexBuffer(Shader* shad,unsigned int vertNum, unsigned int
 			Error("That BufferRate is not supported!\n");
 	}
 
-	// std::vector<VkVertexInputAttributeDescription> inputDescs;
 	VertexBuffer* buff = new VertexBuffer;
 	buff->uses = 0;
 	buff->vertexNum = vertNum;
