@@ -35,11 +35,6 @@ int main() {
 
 	VertexBuffer* buff = CreateVertexBuffer(shad,3,0,0,BufferRate::PER_VERTEX,&Test,&Test.pos,&Test.color);
 
-	//  std::vector<Test_t> dataVec = {
-	//  	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    //  {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    //  {{-0.5f, 0.5f}, {1.0f, 0.0f, 1.0f}}
-	//  };
 	std::vector<glm::vec2> pos = {{0.0f, -0.5f},{0.5f, 0.5f},{-0.5f, 0.5f}};
 	std::vector<glm::vec3> color = {{1.0f, 0.0f, 0.0f},{0.0f, 1.0f, 0.0f},{1.0f, 0.0f, 1.0f}};
 	buff->WriteData(0,pos.data(),color.data());

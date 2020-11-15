@@ -5,11 +5,12 @@
 #include "globalVulkan.h"
 #include "devices.h"
 #include "errorCatch.h"
-#include "graphics.h"
+//#include "graphics.h"
 // #include "vertexbuffer.h"
+//#include <vulkan/vulkan.h>
 
-#include <vulkan/vulkan.h>
 
+struct Shader;
 
 
 VkCommandPool CreateCommandPool(VkDevice device,QueueFamilyIndex* indices);

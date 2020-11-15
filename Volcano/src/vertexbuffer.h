@@ -3,10 +3,11 @@
 #include <glm.hpp>
 #include <vector>
 #include <iostream>
+#include <list>
 
+#include "devices.h"
 #include "globalVulkan.h"
 #include "errorCatch.h"
-#include "graphics.h"
 
 #define GETTYPE(T) typeid(T).hash_code()
 
@@ -15,10 +16,63 @@ enum BufferRate{
 	PER_INSTANCE
 };
 
-// struct VertexBuffer{
-// 	VkVertexInputBindingDescription bindDesc;
-// 	std::vector<VkVertexInputAttributeDescription> attribDescs;
-// };
+struct Shader;
+struct VertexBuffer {
+	std::list<Shader*> shaders;
+	unsigned int uses;
+
+	Device* device;
+	VkBuffer buff;
+	VkDeviceMemory buffMem;
+	uint64_t memSize;
+
+	//requires vertexdata to make this
+	void* formattedData;
+
+	//default is num of first
+	unsigned int vertexNum;
+
+	VkVertexInputBindingDescription bindDesc;
+	std::vector<VkVertexInputAttributeDescription> attribDescs;
+
+
+	template<class last>
+	void IterThruArgs(void* allocData, int index, unsigned int vertDex, last* lastArg) {
+		memcpy((void*)(size_t(allocData) + attribDescs[index].offset + (bindDesc.stride * vertDex)), (void*)(size_t(lastArg) + sizeof(last) * vertDex), sizeof(last));
+	}
+	template< class next, class ...argsT>
+	void IterThruArgs(void* allocData, int index, unsigned int vertDex, next* nextArg, argsT*... data) {
+		memcpy((void*)(size_t(allocData) + attribDescs[index].offset + (bindDesc.stride * vertDex)), (void*)(size_t(nextArg) + sizeof(next) * vertDex), sizeof(next));
+		IterThruArgs(allocData, index + 1, vertDex, data...);
+	}
+	template<class ...argsT>
+	void* FormatVertexBuffer(unsigned int mask, argsT*... data) {
+		//(x[],y[],z[]) -> data
+		//(x[0],y[0],z[0]),
+		//(x[1],y[1],z[1])
+		void* allocData = malloc(memSize);
+		for (unsigned int i = 0; i < vertexNum; i++) {
+			IterThruArgs(allocData, 0, i, data...);
+		}
+		return allocData;
+	}
+
+	//to write use:
+	void MapData(void** data);//then
+	void UnMapData();
+	//OR:
+	template<class ...argsT>
+	void WriteData(unsigned int mask, argsT*... data) {
+		void* formatData = FormatVertexBuffer(mask, data...);
+		void* mapped;
+		MapData(&mapped);
+		memcpy(mapped, formatData, memSize);
+		UnMapData();
+		free(formatData);
+	}
+
+	~VertexBuffer();
+};
 
 template <class T>
 VkFormat GetTypeFormat(){
@@ -124,7 +178,7 @@ VertexBuffer* CreateVertexBuffer(Shader* shad,unsigned int vertNum, unsigned int
 
 	if(vkAllocateMemory(shad->device->device,&allocInfo,NULL,&buff->buffMem) != VK_SUCCESS){
 		Error("Couldn't allocate memory for the vertex buffer!\n");
-	}	
+	}
 
 	vkBindBufferMemory(device->device,buff->buff,buff->buffMem,0);
 

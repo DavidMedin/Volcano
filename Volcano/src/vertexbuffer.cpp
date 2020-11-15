@@ -1,5 +1,5 @@
 #include "vertexbuffer.h"
-
+#include "shader.h"
 
 
 VertexBuffer::~VertexBuffer(){
