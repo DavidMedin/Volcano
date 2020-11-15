@@ -1,6 +1,8 @@
 Volcano.sln
 bin/Debug/*
 !bin/Debug/*.dll
+!bin/Debug/*.exe
 Volcano/*.*
 !Volcano/glfw3.dll
 Volcano/tmp
+.va
