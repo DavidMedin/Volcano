@@ -37,6 +37,20 @@ VkFormat GetTypeFormat(){
 	}
 }
 
+// void CreateBuffer(VkDeviceSize size,VkBufferUsageFlagBits usage,VkSharingMode share){
+// 	VkBufferCreateInfo buffInfo = {};
+// 	buffInfo.flags=0;
+// 	buffInfo.pNext=0;
+// 	buffInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+// 	buffInfo.size = size;
+// 	buffInfo.usage = usage;
+// 	buffInfo.sharingMode = share;//cause only for graphics queue
+// 	if(vkCreateBuffer(shad->device->device,&buffInfo,NULL,&buff)!= VK_SUCCESS){
+// 		Error("Couldn't create a vertex buffer!\n");
+// 	}
+// }
+
+
 struct Shader;
 struct VertexBuffer {
 	std::list<Shader*> shaders;

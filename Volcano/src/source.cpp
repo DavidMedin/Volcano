@@ -4,19 +4,6 @@ Window* window;
 Window* otherWindow;
 Shader* shad;
 
-void Shutdown() {
-	vkDeviceWaitIdle(device->device);//finish everything it is doing so the semaphores are no longer in use
-
-	DestoryWindow(device,window);
-	// DestoryWindow(device,otherWindow);
-
-	delete shad;
-	vkDestroyDevice(device->device,NULL);
-	GetCurrentInstance()->~Instance();
-	SetCurrentInstance(nullptr);
-	DestroyGLFW();
-}
-
 struct Test_t{
 	glm::vec2 pos;
 	glm::vec3 color;
@@ -42,7 +29,6 @@ int main() {
 
 	window = new Window("TestWindow",device);
 
-
 	//game loop
 	double afterTime = 0;
 	double beforeTime = 0;
@@ -54,9 +40,8 @@ int main() {
 		beforeTime = afterTime;
 
 		shad->DrawFrame(window->swapchain);
-		// shad->DrawFrame(otherWindow->swapchain);
 		glfwPollEvents();
 	}
-	Shutdown();
+	DestroyVolcano(device);
 	return 0;
 }

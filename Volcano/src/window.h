@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <stdlib.h>
+#include <list>
 
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
@@ -18,12 +19,8 @@ struct Window{
 	GLFWwindow* window;
     VkSurfaceKHR surface;
 	SwapChain* swapchain;
-	// DeviceDetails devDets;
 	Window(const char* windowName,Device* device);
 };
 void InitVolcano();
-int InitGLFW();
-void DestroyGLFW();
-// void CreateWindow(const char* windowName,Instance* instance,Device* device, Window* pWindow);
-void DestoryWindow(Device* device, Window *window);
-//void shutdownwindow
+void DestroyVolcano(Device* device);
+void DestroyWindow(Device* device, Window *window);

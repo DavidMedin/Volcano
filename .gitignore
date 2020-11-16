@@ -6,3 +6,4 @@ Volcano/*.*
 !Volcano/glfw3.dll
 Volcano/tmp
 .vs
+Volcano/libs/glm

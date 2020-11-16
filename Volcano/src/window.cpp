@@ -1,4 +1,8 @@
 #include "window.h"
+#include "shader.h"
+std::list<Window*> windows;
+extern std::list<Shader*> shadList;
+
 
 int doneInit = 0;
 int vulkanInit = 0;
@@ -48,9 +52,10 @@ Window::Window(const char* windowName,Device* device){
     swapchain->win = window;
     // CreateSwapChain((*device),surface,&swapchain);
     vulkanInit = 1;
+    windows.push_back(this);
 }
 
-void DestoryWindow(Device* device, Window* window){
+void DestroyWindow(Device* device, Window* window){
     Instance* instance = window->instance;
     //destory everything in DeviceDetails
     
@@ -60,4 +65,18 @@ void DestoryWindow(Device* device, Window* window){
     vkDestroySurfaceKHR(instance->instance,window->surface,NULL);
     //destroy GLFWwindow
     glfwDestroyWindow(window->window);
+}
+
+void DestroyVolcano(Device* device){
+    vkDeviceWaitIdle(device->device);
+    for(auto win: windows){
+        DestroyWindow(device,win);
+    }
+    for(auto shad : shadList){
+        delete shad;
+    }
+    vkDestroyDevice(device->device,NULL);
+    delete GetCurrentInstance();
+    SetCurrentInstance(nullptr);
+    DestroyGLFW();
 }
