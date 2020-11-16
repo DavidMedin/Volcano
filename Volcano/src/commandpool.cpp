@@ -1,13 +1,13 @@
 #include "commandpool.h"
 #include "shader.h"
 #include "vertexbuffer.h"
-VkCommandPool CreateCommandPool(VkDevice device,QueueFamilyIndex* indices){
+VkCommandPool CreateCommandPool(Device* device,int flags){
     VkCommandPool pool;
     VkCommandPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = indices->graphics;
-    if(vkCreateCommandPool(device,&poolInfo,NULL,&pool) != VK_SUCCESS){
+    poolInfo.flags = flags;
+    poolInfo.queueFamilyIndex = device->families.graphics;
+    if(vkCreateCommandPool(device->device,&poolInfo,NULL,&pool) != VK_SUCCESS){
         Error("   command pool create failed\n");
         return nullptr;
     }
@@ -76,16 +76,14 @@ void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* f
         vkCmdBeginRenderPass(deCmdBuffs[i],&renderStartInfo,VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(deCmdBuffs[i],VK_PIPELINE_BIND_POINT_GRAPHICS,graphicsPipeline);
 
-        // VkBuffer* vertBuffArray = (VkBuffer*)malloc(sizeof(VkBuffer)*shad->vertBuffs.size());
-        // VkDeviceSize* offsets = (VkDeviceSize*)calloc(1,sizeof(VkDeviceSize)*shad->vertBuffs.size());//should be zero?
         VkBuffer vertBuffArray[1] = {};
         VkDeviceSize offsets[1] = {0};
         unsigned int index = 0;
         for(auto buff : shad->vertBuffs){
-            vertBuffArray[index] = buff->buff;
+            vertBuffArray[index] = buff->stageBuff;
             index++;
         }
-        vkCmdBindVertexBuffers(deCmdBuffs[i],0,shad->vertBuffs.size(),vertBuffArray,offsets);
+        vkCmdBindVertexBuffers(deCmdBuffs[i],0,(unsigned int)shad->vertBuffs.size(),vertBuffArray,offsets);
         vkCmdDraw(deCmdBuffs[i],shad->vertNum,1,0,0);
         //end the cmd recording
         vkCmdEndRenderPass(deCmdBuffs[i]);

@@ -75,7 +75,7 @@ void DestroyVolcano(Device* device){
     for(auto shad : shadList){
         delete shad;
     }
-    vkDestroyDevice(device->device,NULL);
+    delete device;
     delete GetCurrentInstance();
     SetCurrentInstance(nullptr);
     DestroyGLFW();

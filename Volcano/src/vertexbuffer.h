@@ -8,6 +8,7 @@
 #include "devices.h"
 #include "globalVulkan.h"
 #include "errorCatch.h"
+#include "commandpool.h"
 
 #define GETTYPE(T) typeid(T).hash_code()
 
@@ -37,18 +38,7 @@ VkFormat GetTypeFormat(){
 	}
 }
 
-// void CreateBuffer(VkDeviceSize size,VkBufferUsageFlagBits usage,VkSharingMode share){
-// 	VkBufferCreateInfo buffInfo = {};
-// 	buffInfo.flags=0;
-// 	buffInfo.pNext=0;
-// 	buffInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-// 	buffInfo.size = size;
-// 	buffInfo.usage = usage;
-// 	buffInfo.sharingMode = share;//cause only for graphics queue
-// 	if(vkCreateBuffer(shad->device->device,&buffInfo,NULL,&buff)!= VK_SUCCESS){
-// 		Error("Couldn't create a vertex buffer!\n");
-// 	}
-// }
+void CreateBuffer(Device* device,VkDeviceSize size, int usage,VkSharingMode share,VkMemoryPropertyFlags props,VkBuffer* buff,VkDeviceMemory* buffMem);
 
 
 struct Shader;
@@ -57,11 +47,15 @@ struct VertexBuffer {
 	unsigned int uses;
 
 	Device* device;
-	VkBuffer buff;
-	VkDeviceMemory buffMem;
-	uint64_t memSize;
 
+	VkBuffer stageBuff;
+	VkDeviceMemory stageMem;
+
+
+	VkBuffer fastBuff;
+	VkDeviceMemory fastBuffMem;
 	//requires vertexdata to make this
+	uint64_t memSize;
 	void* formattedData;
 
 	//default is num of first
@@ -154,46 +148,14 @@ struct VertexBuffer {
 	bindDesc = bindingDesc;
 	ItterAtrib<structType,TypesT...>(&attribDescs,bufferLoc,beginLoc,0,inStruct,data...);
 	shad->RegisterVertexBuffer(this);
-	//create the buffer
-	VkBufferCreateInfo buffInfo = {0};
-	buffInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffInfo.size = sizeof(structType)*vertNum;
-	memSize = sizeof(structType)*vertNum;
-	buffInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	buffInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;//cause only for graphics queue
-	if(vkCreateBuffer(shad->device->device,&buffInfo,NULL,&buff)!= VK_SUCCESS){
-		Error("Couldn't create a vertex buffer!\n");
-	}
-	//mem requirements
-	VkMemoryRequirements memRequire;
-	vkGetBufferMemoryRequirements(shad->device->device,buff,&memRequire);
 
-	//find a place in the GPU that matches our vertex buffer memory requirements
-	unsigned int properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	int typeIndex = -1;
-	VkPhysicalDeviceMemoryProperties memProps;
-	vkGetPhysicalDeviceMemoryProperties(shad->device->phyDev,&memProps);
-	for(int i = 0; i < (int)memProps.memoryTypeCount;i++){
-		if(memRequire.memoryTypeBits & (1 << i) && (memProps.memoryTypes[i].propertyFlags & properties)==properties){
-			typeIndex = i;
-			break;
-		}
-	}
-	if(typeIndex == -1) {Error("No memory types work for this vertex buffer. Or you're just stupid\n");}
+	//create the staging buff buffer
+	CreateBuffer(device,sizeof(structType)*vertexNum,VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,VK_SHARING_MODE_EXCLUSIVE,VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,&stageBuff,&stageMem);
+	memSize = sizeof(structType)*vertexNum;
 
-	//allocate memory on the GPU for the buffer
-	VkMemoryAllocateInfo allocInfo = {0};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequire.size;
-	allocInfo.memoryTypeIndex = (unsigned int)typeIndex;
+	CreateBuffer(device,sizeof(structType)*vertexNum,VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,VK_SHARING_MODE_EXCLUSIVE,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,&fastBuff,&fastBuffMem);
 
-	if(vkAllocateMemory(shad->device->device,&allocInfo,NULL,&buffMem) != VK_SUCCESS){
-		Error("Couldn't allocate memory for the vertex buffer!\n");
-	}
 
-	vkBindBufferMemory(device->device,buff,buffMem,0);
-
-	// return buff;
 }
 
 	~VertexBuffer();

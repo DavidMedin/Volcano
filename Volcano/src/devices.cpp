@@ -1,4 +1,5 @@
 #include "devices.h"
+#include "commandpool.h"
 
 //requested extentions for our GPU
 const char* requiredDeviceExtensions[] = {
@@ -336,4 +337,11 @@ Device::Device(){
 	vkDestroySurfaceKHR(instance,surface,NULL);
     //destroy GLFWwindow
     glfwDestroyWindow(dummy);
+
+	transferCmdPool = CreateCommandPool(this,VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+}
+
+Device::~Device(){
+	vkDestroyCommandPool(device,transferCmdPool,NULL);
+	vkDestroyDevice(device,NULL);
 }

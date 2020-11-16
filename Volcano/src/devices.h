@@ -33,6 +33,7 @@ struct SwapChainSupportDetails {
 };
 
 struct Device{
+	VkCommandPool transferCmdPool;
 	VkPhysicalDevice phyDev;
 	VkPhysicalDeviceProperties phyProps;
 
@@ -44,6 +45,7 @@ struct Device{
 	QueueFamilyIndex families;
 	Device(VkSurfaceKHR surface,SwapChainSupportDetails* swapDets);
 	Device();
+	~Device();
 };
 
 // int CreateDevice(VkInstance instance,VkSurfaceKHR surface, Device* dets);

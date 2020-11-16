@@ -1,5 +1,4 @@
 #include "renderpass.h"
-#include "graphics.h"
 std::vector<std::list<std::weak_ptr<RenderPass>>> renderpassRegistry;
 //need a way to override these things
 VkRenderPass _CreateRenderPass(VkFormat format, Device* device){

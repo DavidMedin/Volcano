@@ -1,19 +1,17 @@
 #pragma once
 #include <vector>
 #include <list>
+#include <cstdint>
 
 #include "globalVulkan.h"
 #include "devices.h"
 #include "errorCatch.h"
-//#include "graphics.h"
-// #include "vertexbuffer.h"
-//#include <vulkan/vulkan.h>
 
 
 struct Shader;
 
 
-VkCommandPool CreateCommandPool(VkDevice device,QueueFamilyIndex* indices);
+VkCommandPool CreateCommandPool(Device* device,int flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
 std::vector<VkCommandBuffer>* CreateCommandBuffers(Device* device,VkCommandPool commandPool,unsigned int commandBuffCount);
 // void CreateCommandBuffers(Device* device,VkCommandPool commandPool,unsigned int cmdBufferCount,VkCommandBuffer* cmdBuffers);

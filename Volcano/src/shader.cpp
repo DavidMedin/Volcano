@@ -71,7 +71,7 @@ VkShaderModule CreateShaderModule(Device* device, char* code, unsigned int codeS
 Shader::Shader(Device* device, ShaderGroup* shaderGroup, const char* vertexShader, const char* fragmentShader) {
     this->device = device;
     this->group = shaderGroup;
-    cmdPool = CreateCommandPool(this->device->device, &device->families);
+    cmdPool = CreateCommandPool(this->device);
     pipelineLayout = CreatePipeLayout(device);
     shadModCount = 2;
     shadMods = (VkShaderModule*)malloc(sizeof(VkShaderModule));
