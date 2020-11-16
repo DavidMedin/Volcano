@@ -33,7 +33,7 @@ int main() {
 	shad = new Shader(device,&group,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
 
 
-	VertexBuffer* buff = CreateVertexBuffer(shad,3,0,0,BufferRate::PER_VERTEX,&Test,&Test.pos,&Test.color);
+	VertexBuffer* buff = new VertexBuffer(shad,3,0,0,BufferRate::PER_VERTEX,&Test,&Test.pos,&Test.color);
 
 	std::vector<glm::vec2> pos = {{0.0f, -0.5f},{0.5f, 0.5f},{-0.5f, 0.5f}};
 	std::vector<glm::vec3> color = {{1.0f, 0.0f, 0.0f},{0.0f, 1.0f, 0.0f},{1.0f, 0.0f, 1.0f}};
