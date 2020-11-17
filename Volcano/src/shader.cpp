@@ -68,8 +68,8 @@ VkShaderModule CreateShaderModule(Device* device, char* code, unsigned int codeS
 }
 
 // void CreateShader(Device device,VkRenderPass renderpass, SwapChain swap,const char* vertexShader,const char* fragmentShader, Shader* shad){
-Shader::Shader(Device* device, ShaderGroup* shaderGroup, const char* vertexShader, const char* fragmentShader) {
-    this->device = device;
+Shader::Shader(ShaderGroup* shaderGroup, const char* vertexShader, const char* fragmentShader) {
+    this->device = GetCurrentDevice();
     this->group = shaderGroup;
     cmdPool = CreateCommandPool(this->device);
     pipelineLayout = CreatePipeLayout(device);

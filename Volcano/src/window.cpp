@@ -2,6 +2,7 @@
 #include "shader.h"
 std::list<Window*> windows;
 extern std::list<Shader*> shadList;
+extern std::list<Device*> deviceList;
 
 
 int doneInit = 0;
@@ -31,6 +32,7 @@ void InitVolcano(){
         Instance* instance = new Instance();
         SetCurrentInstance(instance);
     }
+    SetCurrentDevice(new Device());
 }
 
 void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
@@ -38,7 +40,7 @@ void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
     win->swapchain->windowResized = true;
 }
 
-Window::Window(const char* windowName,Device* device){
+Window::Window(const char* windowName){
     glfwWindowHint(GLFW_RESIZABLE,GLFW_TRUE);
     window = glfwCreateWindow(WIDTH,HEIGHT,windowName,NULL,NULL);
     glfwSetWindowUserPointer(window, this);
@@ -48,7 +50,7 @@ Window::Window(const char* windowName,Device* device){
     if (glfwCreateWindowSurface(GetCurrentInstance()->instance, window, NULL, &surface)!=VK_SUCCESS) {
 		Error("Couldn't create a surface!\n");
 	}
-    swapchain = new SwapChain(device,surface);
+    swapchain = new SwapChain(GetCurrentDevice(),surface);
     swapchain->win = window;
     // CreateSwapChain((*device),surface,&swapchain);
     vulkanInit = 1;
@@ -67,15 +69,17 @@ void DestroyWindow(Device* device, Window* window){
     glfwDestroyWindow(window->window);
 }
 
-void DestroyVolcano(Device* device){
-    vkDeviceWaitIdle(device->device);
-    for(auto win: windows){
-        DestroyWindow(device,win);
+void DestroyVolcano(){
+    for(auto device: deviceList){
+        vkDeviceWaitIdle(device->device);
+        for(auto win: windows){
+            DestroyWindow(device,win);
+        }
+        for(auto shad : shadList){
+            delete shad;
+        }
+        delete device;
     }
-    for(auto shad : shadList){
-        delete shad;
-    }
-    delete device;
     delete GetCurrentInstance();
     SetCurrentInstance(nullptr);
     DestroyGLFW();

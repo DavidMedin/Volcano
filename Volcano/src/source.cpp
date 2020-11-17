@@ -1,5 +1,4 @@
 #include "source.h"
-Device* device;
 Window* window;
 Window* otherWindow;
 Shader* shad;
@@ -13,11 +12,10 @@ int main() {
 
 
 	InitVolcano();
-	device = new Device();
 
 	ShaderGroup group;//will contain description of renderpass in the future
 	group.index = 0;
-	shad = new Shader(device,&group,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
+	shad = new Shader(&group,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
 
 
 	VertexBuffer* buff = new VertexBuffer(shad,3,0,0,BufferRate::PER_VERTEX,&Test,&Test.pos,&Test.color);
@@ -27,7 +25,7 @@ int main() {
 	buff->WriteData(0,pos.data(),color.data());
 
 
-	window = new Window("TestWindow",device);
+	window = new Window("TestWindow");
 
 	//game loop
 	double afterTime = 0;
@@ -42,6 +40,6 @@ int main() {
 		shad->DrawFrame(window->swapchain);
 		glfwPollEvents();
 	}
-	DestroyVolcano(device);
+	DestroyVolcano();
 	return 0;
 }

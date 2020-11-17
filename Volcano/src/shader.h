@@ -50,7 +50,7 @@ struct Shader{
 	unsigned int vertNum;
 	std::list<VertexBuffer*> vertBuffs;
 
-	Shader(Device* device,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
+	Shader(ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
 	~Shader();
 	void RegisterVertexBuffer(VertexBuffer* buff);
 	void RegisterSwapChain(SwapChain* swap);

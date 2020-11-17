@@ -1,5 +1,14 @@
 #include "devices.h"
 #include "commandpool.h"
+std::list<Device*> deviceList;
+Device* currentDevice=nullptr;
+
+void SetCurrentDevice(Device* device){
+	currentDevice = device;
+}
+Device* GetCurrentDevice(){
+	return currentDevice;
+}
 
 //requested extentions for our GPU
 const char* requiredDeviceExtensions[] = {
@@ -261,7 +270,8 @@ Device::Device(VkSurfaceKHR surface,SwapChainSupportDetails* swapDets) {
 	// if(!CreateSwapChain(dets->device,&(dets->families),surface,&(dets->swapChain))){
 	// 	return 0;
 	// }	
-
+	SetCurrentDevice(this);
+	deviceList.push_back(this);
 }
 
 Device::Device(){
@@ -339,6 +349,9 @@ Device::Device(){
     glfwDestroyWindow(dummy);
 
 	transferCmdPool = CreateCommandPool(this,VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+	SetCurrentDevice(this);
+	deviceList.push_back(this);
 }
 
 Device::~Device(){

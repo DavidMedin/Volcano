@@ -50,3 +50,6 @@ struct Device{
 
 // int CreateDevice(VkInstance instance,VkSurfaceKHR surface, Device* dets);
 int IsDeviceCompatible(VkPhysicalDevice phyDev,VkSurfaceKHR surface,VkPhysicalDeviceProperties props,QueueFamilyIndex* fams, SwapChainSupportDetails* swapDets);
+
+void SetCurrentDevice(Device* device);
+Device* GetCurrentDevice();
