@@ -156,6 +156,16 @@ SwapChain::SwapChain(Device* devDets, VkSurfaceKHR surface) {
         Error("Couldn't create image views!\n");
     }
 
+    imageFence.resize(imageCount, VK_NULL_HANDLE);
+    available.resize(MAX_FRAMES_IN_FLIGHT);
+    presentable.resize(MAX_FRAMES_IN_FLIGHT);
+    fences.resize(MAX_FRAMES_IN_FLIGHT);
+    for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        CreateSemaphore(device->device, &(available[i]));
+        CreateSemaphore(device->device, &(presentable[i]));
+        CreateFence(device->device, &(fences[i]));
+    }
+
     for (auto shad : shadList) {
         shad->RegisterSwapChain(this);
     }
@@ -169,6 +179,32 @@ SwapChain::~SwapChain() {
         shad->DestroySwapChain(this);
     }
     vkDestroySwapchainKHR(device->device, swapChain, NULL);
+    for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroySemaphore(device->device, available[i], NULL);
+        vkDestroySemaphore(device->device, presentable[i], NULL);
+        vkDestroyFence(device->device, fences[i], NULL);
+    }
+}
+
+void SwapChain::PresentFrame(){
+    VkResult rez;
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &presentable[nextFrame];
+    presentInfo.swapchainCount = 1;//whaaaatttt?
+    presentInfo.pSwapchains = &swapChain;
+    presentInfo.pImageIndices = &imageIndex;
+    rez = vkQueuePresentKHR(device->queues[1], &presentInfo);
+    if (rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR| windowResized) {
+        windowResized = false;
+        Recreate();
+    }
+    else if (rez != VK_SUCCESS) {
+        Error("Failed to acquire a swapchain image\n");
+    }
+    // vkQueueWaitIdle(device->queues[1]);
+    nextFrame = (nextFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 

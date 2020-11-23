@@ -29,11 +29,7 @@ Draw::~Draw() {
     for (auto frame : frames) {
         vkDestroyFramebuffer(swapchain->device->device, frame, NULL);
     }
-    for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroySemaphore(swapchain->device->device, available[i], NULL);
-        vkDestroySemaphore(swapchain->device->device, presentable[i], NULL);
-        vkDestroyFence(swapchain->device->device, fences[i], NULL);
-    }
+    
 }
 
 void CreateFramebuffers(VkDevice device, VkRenderPass render, VkImageView* imageViews, unsigned int imageCount, VkExtent2D extent, std::vector<VkFramebuffer>* framebuffIn) {
@@ -98,15 +94,7 @@ void Shader::RegisterSwapChain(SwapChain* swap) {
     command->drawCommands = CreateCommandBuffers(device, cmdPool, swap->imageCount);
     FillCommandBuffers(swap->swapExtent, &command->frames, command->graphicsPipeline, command->renderpass->renderpass, this, command->drawCommands);
 
-    command->imageFence.resize(swap->imageCount, VK_NULL_HANDLE);
-    command->available.resize(MAX_FRAMES_IN_FLIGHT);
-    command->presentable.resize(MAX_FRAMES_IN_FLIGHT);
-    command->fences.resize(MAX_FRAMES_IN_FLIGHT);
-    for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        CreateSemaphore(device->device, &(command->available[i]));
-        CreateSemaphore(device->device, &(command->presentable[i]));
-        CreateFence(device->device, &(command->fences[i]));
-    }
+    
     commands.push_back(command);
     //I hope this works
 }
@@ -122,60 +110,36 @@ void Shader::DestroySwapChain(SwapChain* swap) {
 }
 
 void Shader::DrawFrame(SwapChain* swap) {
-    static unsigned int nextFrame = 0;
+    unsigned int nextFrame = swap->nextFrame;
     for (auto targetCommands : commands) {
         if (targetCommands->swapchain == swap) {
-            vkWaitForFences(device->device, 1, &targetCommands->fences[nextFrame], VK_TRUE, UINT64_MAX);
-            // vkResetFences(device->device,1,&targetCommands->fences[nextFrame]);
+            vkWaitForFences(device->device, 1, &swap->fences[nextFrame], VK_TRUE, UINT64_MAX);
 
             unsigned int imageIndex;
-            VkResult rez = vkAcquireNextImageKHR(device->device, swap->swapChain, UINT64_MAX, targetCommands->available[nextFrame], nullptr, &imageIndex);
-            //if(rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR|| swap->windowResized){
-            //    swap->windowResized = false;
-            //    swap->Recreate();
-            //}else if(rez != VK_SUCCESS){
-            //    Error("Failed to acquire a swapchain image\n");
-            //    return;
-            //}
+            VkResult rez = vkAcquireNextImageKHR(device->device, swap->swapChain, UINT64_MAX, swap->available[nextFrame], nullptr, &imageIndex);
 
-            if (targetCommands->imageFence[imageIndex] != VK_NULL_HANDLE) {
-                vkWaitForFences(device->device, 1, &targetCommands->imageFence[imageIndex], VK_TRUE, UINT64_MAX);
+            if (swap->imageFence[imageIndex] != VK_NULL_HANDLE) {
+                vkWaitForFences(device->device, 1, &swap->imageFence[imageIndex], VK_TRUE, UINT64_MAX);
             }
-            vkResetFences(device->device, 1, &targetCommands->fences[nextFrame]);
-            targetCommands->imageFence[imageIndex] = targetCommands->fences[nextFrame];
+            vkResetFences(device->device, 1, &swap->fences[nextFrame]);
+            swap->imageFence[imageIndex] = swap->fences[nextFrame];
 
 
             VkSubmitInfo submitInfo = {};
             submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
             submitInfo.waitSemaphoreCount = 1;
-            submitInfo.pWaitSemaphores = &targetCommands->available[nextFrame];
+            submitInfo.pWaitSemaphores = &swap->available[nextFrame];
             submitInfo.pWaitDstStageMask = waitStages;
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &(*targetCommands->drawCommands)[imageIndex];
             submitInfo.signalSemaphoreCount = 1;
-            submitInfo.pSignalSemaphores = &targetCommands->presentable[nextFrame];
-            if (vkQueueSubmit(device->queues[0], 1, &submitInfo, targetCommands->fences[nextFrame]) != VK_SUCCESS) {
+            submitInfo.pSignalSemaphores = &swap->presentable[nextFrame];
+            if (vkQueueSubmit(device->queues[0], 1, &submitInfo, swap->fences[nextFrame]) != VK_SUCCESS) {
                 Error("Couldn't send command buffer to graphics queue\n");
             }
 
-            VkPresentInfoKHR presentInfo = {};
-            presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-            presentInfo.waitSemaphoreCount = 1;
-            presentInfo.pWaitSemaphores = &targetCommands->presentable[nextFrame];
-            presentInfo.swapchainCount = 1;//whaaaatttt?
-            presentInfo.pSwapchains = &swap->swapChain;
-            presentInfo.pImageIndices = &imageIndex;
-            rez = vkQueuePresentKHR(device->queues[1], &presentInfo);
-            if (rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR || swap->windowResized) {
-                swap->windowResized = false;
-                swap->Recreate();
-            }
-            else if (rez != VK_SUCCESS) {
-                Error("Failed to acquire a swapchain image\n");
-            }
-            // vkQueueWaitIdle(device->queues[1]);
-            nextFrame = (nextFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+            
             return;
         }
     }

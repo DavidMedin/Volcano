@@ -27,11 +27,7 @@ struct Draw{
 	std::vector<VkFramebuffer> frames;
 	std::vector<VkCommandBuffer>* drawCommands;
 
-	std::vector<VkFence> imageFence;
-
-	std::vector<VkSemaphore> available;
-	std::vector<VkSemaphore> presentable;
-	std::vector<VkFence> fences;
+	
 	~Draw();
 };
 
