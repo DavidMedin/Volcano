@@ -37,7 +37,8 @@ int main() {
 		dt = afterTime - beforeTime;
 		beforeTime = afterTime;
 
-		shad->DrawFrame(window->swapchain);
+		shad->DrawFrame(window);
+		window->Present();
 		glfwPollEvents();
 	}
 	DestroyVolcano();

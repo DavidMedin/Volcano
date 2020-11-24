@@ -20,6 +20,9 @@ struct Window{
     VkSurfaceKHR surface;
 	SwapChain* swapchain;
 	Window(const char* windowName);
+	void Present(){
+		swapchain->PresentFrame();
+	}
 };
 void InitVolcano();
 void DestroyVolcano();

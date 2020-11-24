@@ -1,6 +1,7 @@
 #include "shader.h"
 #include "swapchain.h"
 #include "vertexbuffer.h"
+#include "window.h"
 std::list<SwapChain*> swapList;
 std::list<Shader*> shadList;
 
@@ -24,7 +25,7 @@ int ReadTheFile(const char* path, char** buff, unsigned int* buffSize) {
     return 1;
 }
 
-Draw::~Draw() {
+DrawTarget::~DrawTarget() {
     vkDestroyPipeline(swapchain->device->device, graphicsPipeline, NULL);
     for (auto frame : frames) {
         vkDestroyFramebuffer(swapchain->device->device, frame, NULL);
@@ -85,7 +86,7 @@ Shader::Shader(ShaderGroup* shaderGroup, const char* vertexShader, const char* f
 }
 
 void Shader::RegisterSwapChain(SwapChain* swap) {
-    Draw* command = new Draw;
+    DrawTarget* command = new DrawTarget;
     command->swapchain = swap;
     command->renderpass = CreateRenderpass(swap->GetFormat(), device, group);
     command->graphicsPipeline = CreateGraphicsPipeline(device, pipelineLayout, command->renderpass->renderpass, swap->swapExtent, this);
@@ -109,20 +110,20 @@ void Shader::DestroySwapChain(SwapChain* swap) {
     }
 }
 
-void Shader::DrawFrame(SwapChain* swap) {
-    unsigned int nextFrame = swap->nextFrame;
+void Shader::DrawFrame(Window* window) {
+    SwapChain* swap = window->swapchain;
+    unsigned int nextFrame = swap->nextTimeObj;
     for (auto targetCommands : commands) {
         if (targetCommands->swapchain == swap) {
             vkWaitForFences(device->device, 1, &swap->fences[nextFrame], VK_TRUE, UINT64_MAX);
 
-            unsigned int imageIndex;
-            VkResult rez = vkAcquireNextImageKHR(device->device, swap->swapChain, UINT64_MAX, swap->available[nextFrame], nullptr, &imageIndex);
+            VkResult rez = vkAcquireNextImageKHR(device->device, swap->swapChain, UINT64_MAX, swap->available[nextFrame], nullptr, &swap->imageIndex);
 
-            if (swap->imageFence[imageIndex] != VK_NULL_HANDLE) {
-                vkWaitForFences(device->device, 1, &swap->imageFence[imageIndex], VK_TRUE, UINT64_MAX);
+            if (swap->imageFence[swap->imageIndex] != VK_NULL_HANDLE) {
+                vkWaitForFences(device->device, 1, &swap->imageFence[swap->imageIndex], VK_TRUE, UINT64_MAX);
             }
             vkResetFences(device->device, 1, &swap->fences[nextFrame]);
-            swap->imageFence[imageIndex] = swap->fences[nextFrame];
+            swap->imageFence[swap->imageIndex] = swap->fences[nextFrame];
 
 
             VkSubmitInfo submitInfo = {};
@@ -132,7 +133,7 @@ void Shader::DrawFrame(SwapChain* swap) {
             submitInfo.pWaitSemaphores = &swap->available[nextFrame];
             submitInfo.pWaitDstStageMask = waitStages;
             submitInfo.commandBufferCount = 1;
-            submitInfo.pCommandBuffers = &(*targetCommands->drawCommands)[imageIndex];
+            submitInfo.pCommandBuffers = &(*targetCommands->drawCommands)[swap->imageIndex];
             submitInfo.signalSemaphoreCount = 1;
             submitInfo.pSignalSemaphores = &swap->presentable[nextFrame];
             if (vkQueueSubmit(device->queues[0], 1, &submitInfo, swap->fences[nextFrame]) != VK_SUCCESS) {

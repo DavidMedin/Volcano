@@ -9,18 +9,13 @@
 #define MAX_FRAMES_IN_FLIGHT 4
 
 void CreateFramebuffers(VkDevice device, VkRenderPass render, VkImageView* imageViews, unsigned int imageCount, VkExtent2D extent, std::vector<VkFramebuffer>* framebuffIn);
-//VkCommandPool CreateCommandPool(VkDevice device, QueueFamilyIndex* indices);
-//
-//std::vector<VkCommandBuffer>* CreateCommandBuffers(Device* device, VkCommandPool commandPool, unsigned int commandBuffCount);
-//
-//void FillCommandBuffers(VkExtent2D swapChainExtent, std::vector<VkFramebuffer>* frameBuffs, VkPipeline graphicsPipeline, VkRenderPass renderPass, Shader* shad, std::vector<VkCommandBuffer>* cmdBuffs);
-//
-//int CreateSemaphore(VkDevice device, VkSemaphore* semaphore);
-//int CreateFence(VkDevice device, VkFence* fence);
+
 
 struct VertexBuffer;
 struct SwapChain;
-struct Draw{
+struct Shader;
+struct DrawTarget{
+	Shader* shad;
 	SwapChain* swapchain;
 	std::shared_ptr<RenderPass> renderpass;
 	VkPipeline graphicsPipeline;
@@ -28,9 +23,9 @@ struct Draw{
 	std::vector<VkCommandBuffer>* drawCommands;
 
 	
-	~Draw();
+	~DrawTarget();
 };
-
+struct Window;
 struct Shader{
 	Device* device;
 	VkPipelineLayout pipelineLayout;
@@ -41,7 +36,7 @@ struct Shader{
 	ShaderGroup* group;
 
 	VkCommandPool cmdPool;
-	std::list<Draw*> commands;
+	std::list<DrawTarget*> commands;
 
 	unsigned int vertNum;
 	std::list<VertexBuffer*> vertBuffs;
@@ -51,7 +46,7 @@ struct Shader{
 	void RegisterVertexBuffer(VertexBuffer* buff);
 	void RegisterSwapChain(SwapChain* swap);
 	void DestroySwapChain(SwapChain* swap);
-	void DrawFrame(SwapChain* window);
+	void DrawFrame(Window* window);
 };
 
 

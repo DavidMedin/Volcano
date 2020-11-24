@@ -25,7 +25,8 @@ struct SwapChain {
 	VkImage* images;
 	VkImageView* imageViews;
 
-	unsigned int nextFrame;
+	unsigned int imageIndex;
+	unsigned int nextTimeObj;
 	std::vector<VkFence> imageFence;
 
 	std::vector<VkSemaphore> available;

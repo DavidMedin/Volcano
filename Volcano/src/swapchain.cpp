@@ -142,6 +142,7 @@ SwapChain::SwapChain(Device* devDets, VkSurfaceKHR surface) {
     this->windowResized = false;
     this->device = devDets;
     this->surface = surface;
+    this->nextTimeObj = 0;
     RecreateSwapchain(devDets, surface, this);
     //get the VkImages
     imageCount = 0;
@@ -191,12 +192,12 @@ void SwapChain::PresentFrame(){
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &presentable[nextFrame];
+    presentInfo.pWaitSemaphores = &presentable[nextTimeObj];
     presentInfo.swapchainCount = 1;//whaaaatttt?
     presentInfo.pSwapchains = &swapChain;
     presentInfo.pImageIndices = &imageIndex;
     rez = vkQueuePresentKHR(device->queues[1], &presentInfo);
-    if (rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR| windowResized) {
+    if (rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR || windowResized) {
         windowResized = false;
         Recreate();
     }
@@ -204,7 +205,7 @@ void SwapChain::PresentFrame(){
         Error("Failed to acquire a swapchain image\n");
     }
     // vkQueueWaitIdle(device->queues[1]);
-    nextFrame = (nextFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    nextTimeObj = (nextTimeObj + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 
