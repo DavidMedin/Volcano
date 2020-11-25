@@ -2,6 +2,7 @@
 #include <vector>
 #include <list>
 #include <initializer_list>
+#include <algorithm>
 
 #include "globalVulkan.h"
 
@@ -13,8 +14,10 @@ struct SwapChain;
 
 struct DrawShader{
     Shader* shad;
-    std::vector<DrawTarget*> drawTargs;//per swapchain 
-    std::vector<std::vector<VkCommandBuffer>> cmdBuffs;
+    std::vector<DrawTarget*> drawTargs;//per swapchain
+    std::vector<std::vector<VkCommandBuffer>*> drawCmds;
+
+    void RegisterSwapChain(SwapChain* swap);
 };
 struct DrawObj{
     std::vector<VertexBuffer*> vertBuffs;

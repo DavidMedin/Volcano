@@ -6,7 +6,7 @@
 #include "globalVulkan.h"
 #include "commandpool.h"
 //#include "swapchain.h"
-#define MAX_FRAMES_IN_FLIGHT 4
+#define MAX_FRAMES_IN_FLIGHT 4//num of timing objects. I.e. number of frames you can draw/present at the same time
 
 void CreateFramebuffers(VkDevice device, VkRenderPass render, VkImageView* imageViews, unsigned int imageCount, VkExtent2D extent, std::vector<VkFramebuffer>* framebuffIn);
 
@@ -20,7 +20,7 @@ struct DrawTarget{
 	std::shared_ptr<RenderPass> renderpass;
 	VkPipeline graphicsPipeline;
 	std::vector<VkFramebuffer> frames;
-	std::vector<VkCommandBuffer>* drawCommands;
+	// std::vector<VkCommandBuffer>* drawCommands;//will be deprecated very shortly
 
 	
 	~DrawTarget();
@@ -36,17 +36,19 @@ struct Shader{
 	ShaderGroup* group;
 
 	VkCommandPool cmdPool;
-	std::list<DrawTarget*> commands;
+	std::list<DrawTarget*> drawTargs;
 
-	unsigned int vertNum;
-	std::list<VertexBuffer*> vertBuffs;
+	// unsigned int vertNum;
+	// std::list<VertexBuffer*> vertBuffs;
 
 	Shader(ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
 	~Shader();
-	void RegisterVertexBuffer(VertexBuffer* buff);
+	// void RegisterVertexBuffer(VertexBuffer* buff);
 	void RegisterSwapChain(SwapChain* swap);
 	void DestroySwapChain(SwapChain* swap);
 	void DrawFrame(Window* window);
+
+	bool ContainsSwap(SwapChain*);
 };
 
 

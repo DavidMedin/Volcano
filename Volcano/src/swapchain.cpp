@@ -167,9 +167,10 @@ SwapChain::SwapChain(Device* devDets, VkSurfaceKHR surface) {
         CreateFence(device->device, &(fences[i]));
     }
 
-    for (auto shad : shadList) {
-        shad->RegisterSwapChain(this);
-    }
+    //deprecated because of https://trello.com/c/h9QYwvHr/38-draw-separate-objects
+    // for (auto shad : shadList) {
+    //     shad->RegisterSwapChain(this);
+    // }
 }
 SwapChain::~SwapChain() {
     for (unsigned int i = 0; i < imageCount; i++) {
@@ -247,7 +248,7 @@ void SwapChain::Recreate() {
         Error("Couldn't create image views!\n");
     }
     for (auto shad : shadList) {
-        for (auto command : shad->commands) {
+        for (auto command : shad->drawTargs) {
             if (command->swapchain == this) {
                 command->renderpass = CreateRenderpass(command->swapchain->GetFormat(), device, shad->group);//this should get an existing renderpass, dunno tho
 

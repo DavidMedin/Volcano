@@ -86,85 +86,97 @@ Shader::Shader(ShaderGroup* shaderGroup, const char* vertexShader, const char* f
 }
 
 void Shader::RegisterSwapChain(SwapChain* swap) {
-    DrawTarget* command = new DrawTarget;
-    command->swapchain = swap;
-    command->renderpass = CreateRenderpass(swap->GetFormat(), device, group);
-    command->graphicsPipeline = CreateGraphicsPipeline(device, pipelineLayout, command->renderpass->renderpass, swap->swapExtent, this);
-    command->frames.resize(swap->imageCount);
-    CreateFramebuffers(device->device, command->renderpass->renderpass, swap->imageViews, swap->imageCount, swap->swapExtent, &command->frames);
-    command->drawCommands = CreateCommandBuffers(device, cmdPool, swap->imageCount);
-    FillCommandBuffers(swap->swapExtent, &command->frames, command->graphicsPipeline, command->renderpass->renderpass, this, command->drawCommands);
+    DrawTarget* target = new DrawTarget;
+    target->swapchain = swap;
+    target->renderpass = CreateRenderpass(swap->GetFormat(), device, group);
+    target->graphicsPipeline = CreateGraphicsPipeline(device, pipelineLayout, target->renderpass->renderpass, swap->swapExtent, this);
+    target->frames.resize(swap->imageCount);
+    CreateFramebuffers(device->device, target->renderpass->renderpass, swap->imageViews, swap->imageCount, swap->swapExtent, &target->frames);
+    // target->drawCommands = CreateCommandBuffers(device, cmdPool, swap->imageCount);
+    // FillCommandBuffers(swap->swapExtent, &target->frames, target->graphicsPipeline, target->renderpass->renderpass, this, target->drawCommands);
 
     
-    commands.push_back(command);
+    drawTargs.push_back(target);
     //I hope this works
 }
 
 void Shader::DestroySwapChain(SwapChain* swap) {
-    for (auto command : commands) {
+    for (auto command : drawTargs) {
         if (command->swapchain == swap) {
-            commands.remove(command);
+            drawTargs.remove(command);
             delete command;
             return;
         }
     }
 }
+bool Shader::ContainsSwap(SwapChain* swap){
+    for(auto targ : drawTargs){
+        if(targ->swapchain == swap){
+            return true;
+        }
+    }
+    return false;
+}
+//https://trello.com/c/h9QYwvHr/38-draw-separate-objects
+// void Shader::DrawFrame(Window* window) {
+//     SwapChain* swap = window->swapchain;
+//     unsigned int nextFrame = swap->nextTimeObj;
+    
+//     //check if swapchain is registered in this shader
+//     if(!ContainsSwap(swap)) RegisterSwapChain(swap);
+    
+//     for (auto targetCommands : drawTargs) {
+//         if (targetCommands->swapchain == swap) {
+//             vkWaitForFences(device->device, 1, &swap->fences[nextFrame], VK_TRUE, UINT64_MAX);
 
-void Shader::DrawFrame(Window* window) {
-    SwapChain* swap = window->swapchain;
-    unsigned int nextFrame = swap->nextTimeObj;
-    for (auto targetCommands : commands) {
-        if (targetCommands->swapchain == swap) {
-            vkWaitForFences(device->device, 1, &swap->fences[nextFrame], VK_TRUE, UINT64_MAX);
+//             VkResult rez = vkAcquireNextImageKHR(device->device, swap->swapChain, UINT64_MAX, swap->available[nextFrame], nullptr, &swap->imageIndex);
 
-            VkResult rez = vkAcquireNextImageKHR(device->device, swap->swapChain, UINT64_MAX, swap->available[nextFrame], nullptr, &swap->imageIndex);
-
-            if (swap->imageFence[swap->imageIndex] != VK_NULL_HANDLE) {
-                vkWaitForFences(device->device, 1, &swap->imageFence[swap->imageIndex], VK_TRUE, UINT64_MAX);
-            }
-            vkResetFences(device->device, 1, &swap->fences[nextFrame]);
-            swap->imageFence[swap->imageIndex] = swap->fences[nextFrame];
+//             if (swap->imageFence[swap->imageIndex] != VK_NULL_HANDLE) {
+//                 vkWaitForFences(device->device, 1, &swap->imageFence[swap->imageIndex], VK_TRUE, UINT64_MAX);
+//             }
+//             vkResetFences(device->device, 1, &swap->fences[nextFrame]);
+//             swap->imageFence[swap->imageIndex] = swap->fences[nextFrame];
 
 
-            VkSubmitInfo submitInfo = {};
-            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-            submitInfo.waitSemaphoreCount = 1;
-            submitInfo.pWaitSemaphores = &swap->available[nextFrame];
-            submitInfo.pWaitDstStageMask = waitStages;
-            submitInfo.commandBufferCount = 1;
-            submitInfo.pCommandBuffers = &(*targetCommands->drawCommands)[swap->imageIndex];
-            submitInfo.signalSemaphoreCount = 1;
-            submitInfo.pSignalSemaphores = &swap->presentable[nextFrame];
-            if (vkQueueSubmit(device->queues[0], 1, &submitInfo, swap->fences[nextFrame]) != VK_SUCCESS) {
-                Error("Couldn't send command buffer to graphics queue\n");
-            }
+//             VkSubmitInfo submitInfo = {};
+//             submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+//             VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+//             submitInfo.waitSemaphoreCount = 1;
+//             submitInfo.pWaitSemaphores = &swap->available[nextFrame];
+//             submitInfo.pWaitDstStageMask = waitStages;
+//             submitInfo.commandBufferCount = 1;
+//             submitInfo.pCommandBuffers = &(*targetCommands->drawCommands)[swap->imageIndex];
+//             submitInfo.signalSemaphoreCount = 1;
+//             submitInfo.pSignalSemaphores = &swap->presentable[nextFrame];
+//             if (vkQueueSubmit(device->queues[0], 1, &submitInfo, swap->fences[nextFrame]) != VK_SUCCESS) {
+//                 Error("Couldn't send command buffer to graphics queue\n");
+//             }
 
             
-            return;
-        }
-    }
-}
-
-void Shader::RegisterVertexBuffer(VertexBuffer* buff) {
-    if (vertBuffs.size() != 0) {
-        if (vertNum != buff->vertexNum) {
-            Error("WA-HA-HOO! WHY is the number of vertices in this vertex buffer NOT equal the vertex number of the shader!?\n");
-        }
-    }
-    else {
-        vertNum = buff->vertexNum;
-    }
-    vertBuffs.push_back(buff);
-    buff->shaders.push_back(this);
-    buff->uses++;
-    //rebuild graphics pipeline with updated vertex buffer list
-    for (auto command : commands) {
-        vkDestroyPipeline(device->device, command->graphicsPipeline, NULL);
-        command->graphicsPipeline = CreateGraphicsPipeline(device, pipelineLayout, command->renderpass->renderpass, command->swapchain->swapExtent, this);
-        FillCommandBuffers(command->swapchain->swapExtent, &command->frames, command->graphicsPipeline, command->renderpass->renderpass, this, command->drawCommands);
-    }
-}
+//             return;
+//         }
+//     }
+// }
+//https://trello.com/c/h9QYwvHr/38-draw-separate-objects
+// void Shader::RegisterVertexBuffer(VertexBuffer* buff) {
+//     if (vertBuffs.size() != 0) {
+//         if (vertNum != buff->vertexNum) {
+//             Error("WA-HA-HOO! WHY is the number of vertices in this vertex buffer NOT equal the vertex number of the shader!?\n");
+//         }
+//     }
+//     else {
+//         vertNum = buff->vertexNum;
+//     }
+//     vertBuffs.push_back(buff);
+//     buff->shaders.push_back(this);
+//     buff->uses++;
+//     //rebuild graphics pipeline with updated vertex buffer list
+//     for (auto command : drawTargs) {
+//         vkDestroyPipeline(device->device, command->graphicsPipeline, NULL);
+//         command->graphicsPipeline = CreateGraphicsPipeline(device, pipelineLayout, command->renderpass->renderpass, command->swapchain->swapExtent, this);
+//         FillCommandBuffers(command->swapchain->swapExtent, &command->frames, command->graphicsPipeline, command->renderpass->renderpass, this, command->drawCommands);
+//     }
+// }
 
 
 Shader::~Shader() {
@@ -173,20 +185,21 @@ Shader::~Shader() {
     }
     vkDestroyCommandPool(device->device, cmdPool, NULL);
     vkDestroyPipelineLayout(device->device, pipelineLayout, NULL);
-    if (commands.size() != 0) {
+    if (drawTargs.size() != 0) {
         Error("Didn't destroy all swapchains. Please destroy them before the shader.\n");
     }
     std::list<VertexBuffer*> delList;
-    for (auto buff : vertBuffs) {
-        buff->uses--;
-        if (buff->uses == 0) {
-            delList.push_back(buff);
-        }
-    }
-    for (auto buff : delList) {
-        vertBuffs.remove(buff);
-        delete buff;
-    }
+    //https://trello.com/c/h9QYwvHr/38-draw-separate-objects
+    // for (auto buff : vertBuffs) {
+    //     buff->uses--;
+    //     if (buff->uses == 0) {
+    //         delList.push_back(buff);
+    //     }
+    // }
+    // for (auto buff : delList) {
+    //     vertBuffs.remove(buff);
+    //     delete buff;
+    // }
 }
 
 // void Shader::RecalculateSwapchain(SwapChain* swap){

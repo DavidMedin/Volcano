@@ -3,6 +3,30 @@
 #include "shader.h"
 #include "swapchain.h"
 
+bool DrawShaderContains(DrawShader* shad, SwapChain* swap){
+    for(auto draw:shad->drawTargs){
+        if(draw->swapchain == swap){
+            return true;
+        }
+    }
+    return false;
+}
+
+void DrawShader::RegisterSwapChain(SwapChain* swap){
+    if(!shad->ContainsSwap(swap)) shad->RegisterSwapChain(swap);
+    DrawTarget* tmpTarg;
+    for(auto targ:shad->drawTargs){
+        if(targ->swapchain == swap){
+            drawTargs.push_back(targ);
+            tmpTarg = targ;
+        }
+    }
+    //create/fill cmd buffers
+    std::vector<VkCommandBuffer>* tmpCmdBuffs = CreateCommandBuffers(shad->device, shad->cmdPool,swap->imageCount);
+    drawCmds.push_back(tmpCmdBuffs);
+    FillCommandBuffers(swap->swapExtent, &tmpTarg->frames,tmpTarg->graphicsPipeline, tmpTarg->renderpass->renderpass, shad,tmpCmdBuffs);
+}
+
 DrawObj::DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,IndexBuffer* index){
     this->vertBuffs.resize(vertBuffs.size());
     for(auto vert: vertBuffs){
@@ -14,16 +38,13 @@ void DrawObj::RegisterShader(Shader* shad){
     DrawShader* tmpDraw = new DrawShader;
     tmpDraw->shad = shad;
     for(auto swap:registeredSwaps){
-        RegisterSwapChain(swap);
+        tmpDraw->RegisterSwapChain(swap);
     }
     drawShads.push_back(tmpDraw);
 }
 void DrawObj::RegisterSwapChain(SwapChain* swap){
     for(auto draw: drawShads){
-        for(auto targs:draw->shad->commands){
-            if(targs->swapchain == swap){
-                draw->drawTargs.push_back(targs);
-            }
-        }
+        draw->RegisterSwapChain(swap);
     }
+    registeredSwaps.push_back(swap);
 }
