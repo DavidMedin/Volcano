@@ -20,9 +20,8 @@ struct DrawTarget{
 	std::shared_ptr<RenderPass> renderpass;
 	VkPipeline graphicsPipeline;
 	std::vector<VkFramebuffer> frames;
-	// std::vector<VkCommandBuffer>* drawCommands;//will be deprecated very shortly
 
-	
+
 	~DrawTarget();
 };
 struct Window;
@@ -38,12 +37,11 @@ struct Shader{
 	VkCommandPool cmdPool;
 	std::list<DrawTarget*> drawTargs;
 
-	// unsigned int vertNum;
-	// std::list<VertexBuffer*> vertBuffs;
+	std::list<ID*> inputDescs;
 
-	Shader(ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
+	Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
 	~Shader();
-	// void RegisterVertexBuffer(VertexBuffer* buff);
+
 	void RegisterSwapChain(SwapChain* swap);
 	void DestroySwapChain(SwapChain* swap);
 	void DrawFrame(Window* window);

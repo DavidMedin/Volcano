@@ -65,7 +65,7 @@ VkShaderModule CreateShaderModule(Device* device, char* code, unsigned int codeS
 }
 
 // void CreateShader(Device device,VkRenderPass renderpass, SwapChain swap,const char* vertexShader,const char* fragmentShader, Shader* shad){
-Shader::Shader(ShaderGroup* shaderGroup, const char* vertexShader, const char* fragmentShader) {
+Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader) {
     this->device = GetCurrentDevice();
     this->group = shaderGroup;
     cmdPool = CreateCommandPool(this->device);
@@ -80,6 +80,10 @@ Shader::Shader(ShaderGroup* shaderGroup, const char* vertexShader, const char* f
         ReadTheFile(shaders[i], &code, &codeSize);
         shadMods[i] = CreateShaderModule(device, code, codeSize);
         free(code);
+    }
+
+    for(auto id : ids){
+        inputDescs.push_back(id);
     }
 
     shadList.push_back(this);
@@ -236,12 +240,12 @@ VkPipeline CreateGraphicsPipeline(Device* device, VkPipelineLayout layout, VkRen
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
     unsigned int attribCount = 0;
-    vertexInputInfo.vertexBindingDescriptionCount = (unsigned int)shad->vertBuffs.size();
+    vertexInputInfo.vertexBindingDescriptionCount = (unsigned int)shad->inputDescs.size();
     std::vector<VkVertexInputBindingDescription> tmpBindings;
     std::vector<VkVertexInputAttributeDescription> tmpAttribs;
-    for (auto buff : shad->vertBuffs) {
-        tmpBindings.push_back(buff->bindDesc);
-        for (auto attrib : buff->attribDescs) {
+    for (auto desc : shad->inputDescs) {
+        tmpBindings.push_back(desc->bindDesc);
+        for (auto attrib : desc->attribDescs) {
             tmpAttribs.push_back(attrib);
             attribCount++;
         }
@@ -338,3 +342,12 @@ VkPipeline CreateGraphicsPipeline(Device* device, VkPipelineLayout layout, VkRen
 
     return result;
 }
+// void Shader::RegisterID(ID* id){
+//     inputDescs.push_back(id);
+// }
+// void Shader::BakeIDs(){
+//     for(auto targ : drawTargs){
+//         vkDestroyPipeline(device->device,targ->graphicsPipeline,NULL);
+//         targ->graphicsPipeline = CreateGraphicsPipeline(device,pipelineLayout,targ->renderpass->renderpass,targ->swapchain->swapExtent,this);
+//     }
+// }

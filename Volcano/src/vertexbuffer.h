@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <list>
+#include <initializer_list>
 
 #include "devices.h"
 #include "globalVulkan.h"
@@ -40,11 +41,35 @@ VkFormat GetTypeFormat(){
 
 void CreateBuffer(Device* device,VkDeviceSize size, int usage,VkSharingMode share,VkMemoryPropertyFlags props,VkBuffer* buff,VkDeviceMemory* buffMem);
 
+//InputDescription
+struct ID{
+	VkVertexInputBindingDescription bindDesc;
+	std::vector<VkVertexInputAttributeDescription> attribDescs;
+	template <class structType, class ...TypesT>
+	ID(unsigned int bufferLoc,unsigned int beginLoc,BufferRate rate,structType* inStruct, TypesT*... data){
+		bindingDesc = {0};
+		bindingDesc.binding = bufferLoc;
+		bindingDesc.stride = sizeof(structType);
+
+		switch(rate){
+			case PER_VERTEX:
+				bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+				break;
+			case PER_INSTANCE:
+				bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+				break;
+			default:
+				Error("That BufferRate is not supported!\n");
+		}
+
+		ItterAtrib<structType,TypesT...>(&inDesc->attribDescs,bufferLoc,beginLoc,0,inStruct,data...);
+
+	}
+};
 
 struct Shader;
 struct VertexBuffer {
-	std::list<Shader*> shaders;
-	unsigned int uses;
+	unsigned int uses;//???
 
 	Device* device;
 
@@ -61,9 +86,7 @@ struct VertexBuffer {
 	//default is num of first
 	unsigned int vertexNum;
 
-	VkVertexInputBindingDescription bindDesc;
-	std::vector<VkVertexInputAttributeDescription> attribDescs;
-
+	ID* inDesc;
 
 	template<class last>
 	void IterThruArgs(void* allocData, int index, unsigned int vertDex, last* lastArg) {
@@ -125,30 +148,30 @@ struct VertexBuffer {
 	}
 
 
-	template <class structType, class ...TypesT>
-	VertexBuffer(Shader* shad,unsigned int vertNum, unsigned int bufferLoc,unsigned int beginLoc,BufferRate rate,structType* inStruct, TypesT*... data){
-	VkVertexInputBindingDescription bindingDesc = {0};
-	bindingDesc.binding = bufferLoc;
-	bindingDesc.stride = sizeof(structType);
-	switch(rate){
-		case PER_VERTEX:
-			bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-			break;
-		case PER_INSTANCE:
-			bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
-			break;
-		default:
-			Error("That BufferRate is not supported!\n");
-	}
+	template <class structType>
+	VertexBuffer(ID* id,unsigned int vertNum,structType* identity){
+	// VkVertexInputBindingDescription bindingDesc = {0};
+	// bindingDesc.binding = bufferLoc;
+	// bindingDesc.stride = sizeof(structType);
+	// switch(rate){
+	// 	case PER_VERTEX:
+	// 		bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+	// 		break;
+	// 	case PER_INSTANCE:
+	// 		bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+	// 		break;
+	// 	default:
+	// 		Error("That BufferRate is not supported!\n");
+	// }
 
-	// VertexBuffer* buff = new VertexBuffer;
-	uses = 0;
-	vertexNum = vertNum;
-	device = shad->device;
-	bindDesc = bindingDesc;
-	ItterAtrib<structType,TypesT...>(&attribDescs,bufferLoc,beginLoc,0,inStruct,data...);
-	shad->RegisterVertexBuffer(this);
+	// inDesc = new ID;
+	// uses = 0;
+	// vertexNum = vertNum;
+	// device = shad->device;
+	// inDesc->bindDesc = bindingDesc;
+	// ItterAtrib<structType,TypesT...>(&inDesc->attribDescs,bufferLoc,beginLoc,0,inStruct,data...);
 
+	inDesc = id;
 	//create the staging buff buffer
 	CreateBuffer(device,sizeof(structType)*vertexNum,VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,VK_SHARING_MODE_EXCLUSIVE,VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,&stageBuff,&stageMem);
 	memSize = sizeof(structType)*vertexNum;
