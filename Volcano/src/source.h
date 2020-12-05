@@ -19,7 +19,7 @@
 #include "errorCatch.h"
 #include "renderpass.h"
 #include "vertexbuffer.h"
-
+#include "draw.h"
 
 // #include "swapchain.h"
 //our globals --- declared in globalVulkan.h

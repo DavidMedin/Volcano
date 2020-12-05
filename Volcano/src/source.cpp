@@ -26,6 +26,7 @@ int main() {
 	std::vector<glm::vec3> color = {{1.0f, 0.0f, 0.0f},{0.0f, 1.0f, 0.0f},{1.0f, 0.0f, 1.0f}};
 	buff->WriteData(0,pos.data(),color.data());
 
+	DrawObj* buffDraw = new DrawObj({buff});
 
 	window = new Window("TestWindow");
 
@@ -40,6 +41,7 @@ int main() {
 		beforeTime = afterTime;
 
 		// shad->DrawFrame(window);
+		buffDraw->Draw(shad,window->swapchain);
 		window->Present();
 		glfwPollEvents();
 	}

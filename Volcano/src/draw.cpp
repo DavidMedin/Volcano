@@ -34,6 +34,12 @@ DrawObj::DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,IndexBuffer* ind
     }
     indexBuff = index;   
 }
+DrawObj::DrawObj(std::initializer_list<VertexBuffer*> vertBuffs){
+    this->vertBuffs.resize(vertBuffs.size());
+    for(auto vert: vertBuffs){
+        this->vertBuffs.push_back(vert);
+    }
+}
 void DrawObj::RegisterShader(Shader* shad){
     DrawShader* tmpDraw = new DrawShader;
     tmpDraw->shad = shad;
@@ -47,4 +53,7 @@ void DrawObj::RegisterSwapChain(SwapChain* swap){
         draw->RegisterSwapChain(swap);
     }
     registeredSwaps.push_back(swap);
+}
+void Draw(Shader* shad,SwapChain* swap){
+    
 }

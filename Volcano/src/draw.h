@@ -27,6 +27,7 @@ struct DrawObj{
     std::list<SwapChain*> registeredSwaps;
 
     DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,IndexBuffer* index);
+    DrawObj(std::initializer_list<VertexBuffer*> vertBuffs);
     void RegisterShader(Shader* shad);
     void RegisterSwapChain(SwapChain* swap);
     void Draw(Shader* shad,SwapChain* swap);
