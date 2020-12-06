@@ -25,6 +25,7 @@ struct DrawTarget{
 	~DrawTarget();
 };
 struct Window;
+struct ID;
 struct Shader{
 	Device* device;
 	VkPipelineLayout pipelineLayout;

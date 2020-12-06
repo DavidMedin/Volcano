@@ -1,6 +1,8 @@
 #include "vertexbuffer.h"
 #include "shader.h"
 
+std::list<VertexBuffer*> vertexBufferList;
+
 void CopyBuffer(Device* device,VkBuffer src,VkBuffer dst,VkDeviceSize size){
 	VkCommandBufferAllocateInfo cmdAllocInfo = {};
 	cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -33,11 +35,15 @@ void CopyBuffer(Device* device,VkBuffer src,VkBuffer dst,VkDeviceSize size){
 	vkFreeCommandBuffers(device->device,device->transferCmdPool,1,&cmdBuff);
 }
 
+void VertexBuffer::AddToList(){
+	vertexBufferList.push_back(this);
+}
+
 VertexBuffer::~VertexBuffer(){
-	for(auto shad : shaders){
-		//should remove all refs from shaders
-		shad->vertBuffs.remove(this);
-	}
+	// for(auto shad : shaders){
+	// 	//should remove all refs from shaders
+	// 	shad->vertBuffs.remove(this);
+	// }
 	vkDestroyBuffer(device->device,stageBuff,NULL);
 	vkDestroyBuffer(device->device,fastBuff,NULL);
 	vkFreeMemory(device->device,fastBuffMem,NULL);
@@ -51,7 +57,7 @@ void VertexBuffer::UnMapData(){
 	vkUnmapMemory(device->device,stageMem);
 	CopyBuffer(device,stageBuff,fastBuff,memSize);
 }
-void CreateBuffer(Device* device,VkDeviceSize size, int usage,VkSharingMode share,VkMemoryPropertyFlags props,VkBuffer* buff,VkDeviceMemory* buffMem){
+void CreateBuffer(Device* device,uint64_t size, int usage,VkSharingMode share,VkMemoryPropertyFlags props,VkBuffer* buff,VkDeviceMemory* buffMem){
 	VkBufferCreateInfo buffInfo = {};
 	buffInfo.flags=0;
 	buffInfo.pNext=0;

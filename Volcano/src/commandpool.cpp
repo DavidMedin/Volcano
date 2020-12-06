@@ -1,6 +1,7 @@
 #include "commandpool.h"
 #include "shader.h"
 #include "vertexbuffer.h"
+#include "draw.h"
 VkCommandPool CreateCommandPool(Device* device,int flags){
     VkCommandPool pool;
     VkCommandPoolCreateInfo poolInfo = {};
@@ -45,7 +46,7 @@ void CreateCommandBuffers(Device* device,VkCommandPool commandPool,unsigned int 
 }
 
 
-void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* frameBuffs,VkPipeline graphicsPipeline,VkRenderPass renderPass,Shader* shad,std::vector<VkCommandBuffer>* cmdBuffs){
+void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* frameBuffs,VkPipeline graphicsPipeline,VkRenderPass renderPass,DrawObj* drawObj,std::vector<VkCommandBuffer>* cmdBuffs){
     std::vector<VkCommandBuffer> deCmdBuffs = *cmdBuffs;
     std::vector<VkFramebuffer> deFrameBuffs = *frameBuffs;
     if(deFrameBuffs.size() != deCmdBuffs.size()){
@@ -79,12 +80,12 @@ void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* f
         VkBuffer vertBuffArray[1] = {};
         VkDeviceSize offsets[1] = {0};
         unsigned int index = 0;
-        for(auto buff : shad->vertBuffs){
+        for(auto buff : drawObj->vertBuffs){
             vertBuffArray[index] = buff->stageBuff;
             index++;
         }
-        vkCmdBindVertexBuffers(deCmdBuffs[i],0,(unsigned int)shad->vertBuffs.size(),vertBuffArray,offsets);
-        vkCmdDraw(deCmdBuffs[i],shad->vertNum,1,0,0);
+        vkCmdBindVertexBuffers(deCmdBuffs[i],0,(unsigned int)drawObj->vertBuffs.size(),vertBuffArray,offsets);
+        vkCmdDraw(deCmdBuffs[i],drawObj->vertNum,1,0,0);
         //end the cmd recording
         vkCmdEndRenderPass(deCmdBuffs[i]);
         if(vkEndCommandBuffer(deCmdBuffs[i]) != VK_SUCCESS){

@@ -1,8 +1,10 @@
 #include "window.h"
 #include "shader.h"
+#include "vertexbuffer.h"
 std::list<Window*> windows;
 extern std::list<Shader*> shadList;
 extern std::list<Device*> deviceList;
+extern std::list<VertexBuffer*> vertexBufferList;
 
 
 int doneInit = 0;
@@ -77,6 +79,9 @@ void DestroyVolcano(){
         }
         for(auto shad : shadList){
             delete shad;
+        }
+        for(auto vert : vertexBufferList){
+            delete vert;
         }
         delete device;
     }

@@ -261,7 +261,7 @@ void SwapChain::Recreate() {
                 CreateFramebuffers(device->device, command->renderpass->renderpass, imageViews, imageCount, swapExtent, &command->frames);
 
                 //fill the command buffers
-                FillCommandBuffers(swapExtent, &command->frames, command->graphicsPipeline, command->renderpass->renderpass, shad, command->drawCommands);
+                // FillCommandBuffers(swapExtent, &command->frames, command->graphicsPipeline, command->renderpass->renderpass, shad, command->drawCommands);
 
             }
         }

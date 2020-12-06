@@ -20,13 +20,13 @@ int main() {
 	shad = new Shader({id},&group,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
 
 
-	VertexBuffer* buff = new VertexBuffer(id,3,&Test);
+	VertexBuffer* buff = new VertexBuffer(id,3,Test);
 
 	std::vector<glm::vec2> pos = {{0.0f, -0.5f},{0.5f, 0.5f},{-0.5f, 0.5f}};
 	std::vector<glm::vec3> color = {{1.0f, 0.0f, 0.0f},{0.0f, 1.0f, 0.0f},{1.0f, 0.0f, 1.0f}};
 	buff->WriteData(0,pos.data(),color.data());
 
-	DrawObj* buffDraw = new DrawObj({buff});
+	DrawObj* buffDraw = new DrawObj({buff},shad);
 
 	window = new Window("TestWindow");
 
@@ -40,8 +40,7 @@ int main() {
 		dt = afterTime - beforeTime;
 		beforeTime = afterTime;
 
-		// shad->DrawFrame(window);
-		buffDraw->Draw(shad,window->swapchain);
+		buffDraw->Draw(window);
 		window->Present();
 		glfwPollEvents();
 	}
