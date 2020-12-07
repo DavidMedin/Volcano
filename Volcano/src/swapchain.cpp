@@ -1,5 +1,6 @@
 #include "swapchain.h"
 #include "shader.h"
+#include "draw.h"
 extern std::list<SwapChain*> swapList;
 extern std::list<Shader*> shadList;
 
@@ -143,6 +144,8 @@ SwapChain::SwapChain(Device* devDets, VkSurfaceKHR surface) {
     this->device = devDets;
     this->surface = surface;
     this->nextTimeObj = 0;
+    nextDrawCmd = 0;
+    justDrawn = false;
     RecreateSwapchain(devDets, surface, this);
     //get the VkImages
     imageCount = 0;
@@ -188,8 +191,44 @@ SwapChain::~SwapChain() {
     }
 }
 
-void SwapChain::PresentFrame(){
-    VkResult rez;
+void SwapChain::AddDrawCmd(DrawCmdGroup* cmd){
+    if(nextDrawCmd+1 > drawCmds.size()) drawCmds.resize(nextDrawCmd+1);
+    if(nextDrawCmd == 0)
+        drawCmds[nextDrawCmd] = cmd->clearDraw;
+    else
+        drawCmds[nextDrawCmd] = cmd->mainDraw;
+    nextDrawCmd++;
+}
+
+void SwapChain::DrawFrame(){
+    vkWaitForFences(device->device, 1, &fences[nextTimeObj], VK_TRUE, UINT64_MAX);
+    VkResult rez = vkAcquireNextImageKHR(device->device, swapChain, UINT64_MAX, available[nextTimeObj], nullptr, &imageIndex);
+    if (imageFence[imageIndex] != VK_NULL_HANDLE) {
+        vkWaitForFences(device->device, 1, &imageFence[imageIndex], VK_TRUE, UINT64_MAX);
+    }
+    vkResetFences(device->device, 1, &fences[nextTimeObj]);
+    imageFence[imageIndex] = fences[nextTimeObj];
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = &available[nextTimeObj];
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    //create vector of cmd buffs
+    std::vector<VkCommandBuffer> cmds;
+    for(auto cmdList : drawCmds){
+        if(cmdList->size() != 0)
+        cmds.push_back((*cmdList)[imageIndex]);
+    }
+    submitInfo.commandBufferCount = (unsigned int)cmds.size();
+    submitInfo.pCommandBuffers = cmds.data();
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &presentable[nextTimeObj];
+    if (vkQueueSubmit(device->queues[0], 1, &submitInfo, fences[nextTimeObj]) != VK_SUCCESS) {
+        Error("Couldn't send command buffer to graphics queue\n");
+    }
+
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
@@ -197,7 +236,7 @@ void SwapChain::PresentFrame(){
     presentInfo.swapchainCount = 1;//whaaaatttt?
     presentInfo.pSwapchains = &swapChain;
     presentInfo.pImageIndices = &imageIndex;
-    rez = vkQueuePresentKHR(device->queues[1], &presentInfo);
+    rez = vkQueuePresentKHR(device->queues[1], &presentInfo);//rewriting rez
     if (rez == VK_ERROR_OUT_OF_DATE_KHR || rez == VK_SUBOPTIMAL_KHR || windowResized) {
         windowResized = false;
         Recreate();
@@ -207,6 +246,9 @@ void SwapChain::PresentFrame(){
     }
     // vkQueueWaitIdle(device->queues[1]);
     nextTimeObj = (nextTimeObj + 1) % MAX_FRAMES_IN_FLIGHT;
+
+    drawCmds.clear();
+    nextDrawCmd = 0;
 }
 
 

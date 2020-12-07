@@ -7,6 +7,7 @@
 #include "globalVulkan.h"
 
 struct Shader;
+struct DrawCmdGroup;
 struct SwapChain {
 
 	Device* device;
@@ -33,10 +34,15 @@ struct SwapChain {
 	std::vector<VkSemaphore> presentable;
 	std::vector<VkFence> fences;
 
+	std::vector<std::vector<VkCommandBuffer>*> drawCmds;
+	unsigned int nextDrawCmd;
+	bool justDrawn;
+
 	SwapChain(Device* device, VkSurfaceKHR surface);
 	~SwapChain();
 	void Recreate();
 	VkFormat GetFormat();
 
-	void PresentFrame();
+	void AddDrawCmd(DrawCmdGroup* cmd);
+	void DrawFrame();
 };

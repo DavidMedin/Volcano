@@ -1,7 +1,5 @@
 #include "source.h"
 Window* window;
-Window* otherWindow;
-Shader* shad;
 
 struct Test_t{
 	glm::vec2 pos;
@@ -13,20 +11,22 @@ int main() {
 
 	InitVolcano();
 
-	ShaderGroup group;//will contain description of renderpass in the future
-	group.index = 0;
+	ShaderGroup group = ShaderGroup(0);//will contain description of renderpass in the future
 
 	ID* id = new ID(0,0,PER_VERTEX,&Test,&Test.pos,&Test.color);
-	shad = new Shader({id},&group,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
+	Shader* shad = new Shader({id},&group,"Volcano/src/shaders/vertex.spv","Volcano/src/shaders/fragment.spv");
+	Shader* secondShad = new Shader({id},&group,"Volcano/src/shaders/secondVertex.spv","Volcano/src/shaders/fragment.spv");
 
 
 	VertexBuffer* buff = new VertexBuffer(id,3,Test);
-
 	std::vector<glm::vec2> pos = {{0.0f, -0.5f},{0.5f, 0.5f},{-0.5f, 0.5f}};
 	std::vector<glm::vec3> color = {{1.0f, 0.0f, 0.0f},{0.0f, 1.0f, 0.0f},{1.0f, 0.0f, 1.0f}};
+
+
 	buff->WriteData(0,pos.data(),color.data());
 
 	DrawObj* buffDraw = new DrawObj({buff},shad);
+	DrawObj* drawSecond = new DrawObj({buff},secondShad);
 
 	window = new Window("TestWindow");
 
@@ -40,8 +40,9 @@ int main() {
 		dt = afterTime - beforeTime;
 		beforeTime = afterTime;
 
-		buffDraw->Draw(window);
-		window->Present();
+		buffDraw->QueueDraw(window);
+		drawSecond->QueueDraw(window);
+		window->Draw();
 		glfwPollEvents();
 	}
 	DestroyVolcano();

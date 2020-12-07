@@ -4,18 +4,28 @@
 
 #include "globalVulkan.h"
 #include "Devices.h"
+
 struct ShaderGroup{
 	//will contain info on the renderpass later
+	VkRenderPassCreateInfo* defaultpass;
+	VkRenderPassCreateInfo* clearerpass;
+
 	int index; //not actually used. will replace with renderpass info later
+	ShaderGroup();
+	ShaderGroup(int index);
+	ShaderGroup(int index,VkRenderPassCreateInfo* default,VkAttachmentDescription* presentAttach);
+	ShaderGroup(int index,VkRenderPassCreateInfo* default,VkRenderPassCreateInfo* clearer);
 };
 
 struct RenderPass{
 	VkDevice device;
 
     VkRenderPass renderpass;
+	VkRenderPass clearpass;
     VkFormat format;
 	// unsigned int shaderGroup;
 	ShaderGroup* group;
+	RenderPass(ShaderGroup* group);
 	// RenderPass(Window* win,Device* device);
 };
 void DestroyRenderpasses();//this is a terrible function.
