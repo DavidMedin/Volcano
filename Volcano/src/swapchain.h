@@ -3,6 +3,8 @@
 #include <list>
 #include <vector>
 
+#include <spirv_cross/spirv_reflect.hpp>
+
 #include "devices.h"
 #include "globalVulkan.h"
 

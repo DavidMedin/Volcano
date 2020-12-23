@@ -30,7 +30,7 @@ DrawTarget::~DrawTarget() {
     for (auto frame : frames) {
         vkDestroyFramebuffer(swapchain->device->device, frame, NULL);
     }
-    
+
 }
 
 void CreateFramebuffers(VkDevice device, VkRenderPass render, VkImageView* imageViews, unsigned int imageCount, VkExtent2D extent, std::vector<VkFramebuffer>* framebuffIn) {
@@ -63,8 +63,60 @@ VkShaderModule CreateShaderModule(Device* device, char* code, unsigned int codeS
     }
     return shader;
 }
+VkShaderModule CreateShaderModule(Device* device, std::vector<uint32_t>* code) {
+    VkShaderModuleCreateInfo shaderInfo = {};
+    shaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    shaderInfo.codeSize = (size_t)code->size()*4; //*4 for the convertion from uint32_t size to bytes
+    shaderInfo.pCode = (uint32_t*)code->data();
+    VkShaderModule shader;
+    if (vkCreateShaderModule(device->device, &shaderInfo, NULL, &shader) != VK_SUCCESS) {
+        Error("CreateShaderModule failed to create a shader!\n");
+        return NULL;
+    }
+    return shader;
+}
 
-// void CreateShader(Device device,VkRenderPass renderpass, SwapChain swap,const char* vertexShader,const char* fragmentShader, Shader* shad){
+Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup, const char* glslShader){
+    std::string vertexPath = std::string(glslShader);
+    std::string fragmentPath = std::string(glslShader);
+    vertexPath.append(".vert");
+    fragmentPath.append(".frag");
+
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions options;
+
+    this->device = GetCurrentDevice();
+    this->group = shaderGroup;
+    cmdPool = CreateCommandPool(this->device);
+    pipelineLayout = CreatePipeLayout(device);
+    shadModCount = 2;
+    shadMods = (VkShaderModule*)malloc(sizeof(VkShaderModule));
+
+    const char* shaders[] = { vertexPath.c_str(),fragmentPath.c_str() };
+    const shaderc_shader_kind shad_progress[2] = {shaderc_vertex_shader,shaderc_fragment_shader};
+    for (unsigned int i = 0; i < shadModCount; i++) {
+        unsigned int codeSize = 0;
+        char* glslCode;
+        ReadTheFile(shaders[i], &glslCode, &codeSize);
+
+        shaderc::SpvCompilationResult compileRez = compiler.CompileGlslToSpv(glslCode,codeSize,shad_progress[i],glslShader);
+        if(compileRez.GetCompilationStatus() != shaderc_compilation_status_success){
+            Error("%s\n",compileRez.GetErrorMessage().c_str());
+        }
+        std::vector<uint32_t> spirvCode = std::vector<uint32_t>(compileRez.cbegin(),compileRez.cend());
+        shadMods[i] = CreateShaderModule(device, &spirvCode);
+        free(glslCode);
+    }
+    //use spriv-reflect to get shader input ID
+
+
+    for(auto id : ids){
+        inputDescs.push_back(id);
+    }
+
+    shadList.push_back(this);
+}
+
 Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader) {
     this->device = GetCurrentDevice();
     this->group = shaderGroup;
@@ -81,6 +133,8 @@ Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const cha
         shadMods[i] = CreateShaderModule(device, code, codeSize);
         free(code);
     }
+    //use spriv-reflect to get shader input ID
+
 
     for(auto id : ids){
         inputDescs.push_back(id);
@@ -96,10 +150,8 @@ void Shader::RegisterSwapChain(SwapChain* swap) {
     target->graphicsPipeline = CreateGraphicsPipeline(device, pipelineLayout, target->renderpass->renderpass, swap->swapExtent, this);
     target->frames.resize(swap->imageCount);
     CreateFramebuffers(device->device, target->renderpass->renderpass, swap->imageViews, swap->imageCount, swap->swapExtent, &target->frames);
-    // target->drawCommands = CreateCommandBuffers(device, cmdPool, swap->imageCount);
-    // FillCommandBuffers(swap->swapExtent, &target->frames, target->graphicsPipeline, target->renderpass->renderpass, this, target->drawCommands);
 
-    
+
     drawTargs.push_back(target);
     //I hope this works
 }
@@ -121,66 +173,6 @@ bool Shader::ContainsSwap(SwapChain* swap){
     }
     return false;
 }
-//https://trello.com/c/h9QYwvHr/38-draw-separate-objects
-// void Shader::DrawFrame(Window* window) {
-//     SwapChain* swap = window->swapchain;
-//     unsigned int nextFrame = swap->nextTimeObj;
-    
-//     //check if swapchain is registered in this shader
-//     if(!ContainsSwap(swap)) RegisterSwapChain(swap);
-    
-//     for (auto targetCommands : drawTargs) {
-//         if (targetCommands->swapchain == swap) {
-//             vkWaitForFences(device->device, 1, &swap->fences[nextFrame], VK_TRUE, UINT64_MAX);
-
-//             VkResult rez = vkAcquireNextImageKHR(device->device, swap->swapChain, UINT64_MAX, swap->available[nextFrame], nullptr, &swap->imageIndex);
-
-//             if (swap->imageFence[swap->imageIndex] != VK_NULL_HANDLE) {
-//                 vkWaitForFences(device->device, 1, &swap->imageFence[swap->imageIndex], VK_TRUE, UINT64_MAX);
-//             }
-//             vkResetFences(device->device, 1, &swap->fences[nextFrame]);
-//             swap->imageFence[swap->imageIndex] = swap->fences[nextFrame];
-
-
-//             VkSubmitInfo submitInfo = {};
-//             submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-//             VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-//             submitInfo.waitSemaphoreCount = 1;
-//             submitInfo.pWaitSemaphores = &swap->available[nextFrame];
-//             submitInfo.pWaitDstStageMask = waitStages;
-//             submitInfo.commandBufferCount = 1;
-//             submitInfo.pCommandBuffers = &(*targetCommands->drawCommands)[swap->imageIndex];
-//             submitInfo.signalSemaphoreCount = 1;
-//             submitInfo.pSignalSemaphores = &swap->presentable[nextFrame];
-//             if (vkQueueSubmit(device->queues[0], 1, &submitInfo, swap->fences[nextFrame]) != VK_SUCCESS) {
-//                 Error("Couldn't send command buffer to graphics queue\n");
-//             }
-
-            
-//             return;
-//         }
-//     }
-// }
-//https://trello.com/c/h9QYwvHr/38-draw-separate-objects
-// void Shader::RegisterVertexBuffer(VertexBuffer* buff) {
-//     if (vertBuffs.size() != 0) {
-//         if (vertNum != buff->vertexNum) {
-//             Error("WA-HA-HOO! WHY is the number of vertices in this vertex buffer NOT equal the vertex number of the shader!?\n");
-//         }
-//     }
-//     else {
-//         vertNum = buff->vertexNum;
-//     }
-//     vertBuffs.push_back(buff);
-//     buff->shaders.push_back(this);
-//     buff->uses++;
-//     //rebuild graphics pipeline with updated vertex buffer list
-//     for (auto command : drawTargs) {
-//         vkDestroyPipeline(device->device, command->graphicsPipeline, NULL);
-//         command->graphicsPipeline = CreateGraphicsPipeline(device, pipelineLayout, command->renderpass->renderpass, command->swapchain->swapExtent, this);
-//         FillCommandBuffers(command->swapchain->swapExtent, &command->frames, command->graphicsPipeline, command->renderpass->renderpass, this, command->drawCommands);
-//     }
-// }
 
 
 Shader::~Shader() {
@@ -193,22 +185,8 @@ Shader::~Shader() {
         Error("Didn't destroy all swapchains. Please destroy them before the shader.\n");
     }
     std::list<VertexBuffer*> delList;
-    //https://trello.com/c/h9QYwvHr/38-draw-separate-objects
-    // for (auto buff : vertBuffs) {
-    //     buff->uses--;
-    //     if (buff->uses == 0) {
-    //         delList.push_back(buff);
-    //     }
-    // }
-    // for (auto buff : delList) {
-    //     vertBuffs.remove(buff);
-    //     delete buff;
-    // }
+
 }
-
-// void Shader::RecalculateSwapchain(SwapChain* swap){
-
-// }
 
 VkPipelineLayout CreatePipeLayout(Device* device) {
     //create the pipline layout

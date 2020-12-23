@@ -59,6 +59,10 @@
 		"xlocnum": "cpp",
 		"xloctime": "cpp",
 		"xstring": "cpp",
-		"xtree": "cpp"
+		"xtree": "cpp",
+		"deque": "cpp",
+		"fstream": "cpp",
+		"regex": "cpp",
+		"stack": "cpp"
 	}
 }

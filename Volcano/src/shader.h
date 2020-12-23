@@ -2,6 +2,8 @@
 #include <vector>
 #include <list>
 
+#include "shaderc/shaderc.hpp"
+
 #include "renderpass.h"
 #include "globalVulkan.h"
 #include "commandpool.h"
@@ -41,6 +43,7 @@ struct Shader{
 	std::list<ID*> inputDescs;
 
 	Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
+	Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* glslShader);
 	~Shader();
 
 	void RegisterSwapChain(SwapChain* swap);

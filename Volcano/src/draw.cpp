@@ -67,7 +67,7 @@ DrawObj::DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,Shader* shad){
         this->vertBuffs[i] = vert;
         i++;
     }
-    
+
     vertNum = tmpVertNum;
     this->shad = shad;
     device = GetCurrentDevice();
