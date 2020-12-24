@@ -16,6 +16,7 @@ void CreateFramebuffers(VkDevice device, VkRenderPass render, VkImageView* image
 struct VertexBuffer;
 struct SwapChain;
 struct Shader;
+struct DrawCmdGroup;
 struct DrawTarget{
 	Shader* shad;
 	SwapChain* swapchain;
@@ -23,17 +24,22 @@ struct DrawTarget{
 	VkPipeline graphicsPipeline;
 	std::vector<VkFramebuffer> frames;
 
-
+	std::list<DrawCmdGroup*> cmds;
 	~DrawTarget();
 };
 struct Window;
 struct ID;
+
+struct ShaderMod {
+	VkShaderModule mod;
+	std::vector<uint32_t> code;
+};
 struct Shader{
 	Device* device;
 	VkPipelineLayout pipelineLayout;
 
 	//index 0:vertex 1:frag 2:geom -- more in the future
-	VkShaderModule* shadMods;
+	ShaderMod* shadMods;
 	unsigned int shadModCount;
 	ShaderGroup* group;
 

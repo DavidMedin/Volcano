@@ -31,6 +31,14 @@ void DrawObj::RegisterSwapChain(SwapChain* swap){
         // drawCmds.push_back(tmpCmdBuffs);
         FillCommandBuffers(swap->swapExtent, &tmpTarg->frames,tmpTarg->graphicsPipeline, tmpTarg->renderpass->renderpass,this,tmpDrawBuffs);
         FillCommandBuffers(swap->swapExtent, &tmpTarg->frames,tmpTarg->graphicsPipeline, tmpTarg->renderpass->clearpass,this,tmpClearBuffs);
+
+        for(auto targ:shad->drawTargs){
+            if(targ->swapchain == swap){
+                targ->cmds.push_back(tmpDrawGroup);
+            }
+        }
+
+        tmpDrawGroup->draw = this;
         drawCmds.push_back(tmpDrawGroup);
         registeredSwaps.push_back(swap);
     }
@@ -83,6 +91,23 @@ void DrawObj::QueueDraw(Window* win){
         if (targetCommands->swapchain == swap) {
             swap->AddDrawCmd(drawCmds[i]);
             return;
+        }
+        i++;
+    }
+}
+void DrawObj::RecalculateCmdBuffs(DrawCmdGroup* group){
+    unsigned int i = 0;
+    for(auto g : drawCmds){
+        if(g == group){
+            //recalculate this group
+            //create/fill cmd buffers
+            std::vector<VkCommandBuffer>* tmpDrawBuffs = CreateCommandBuffers(shad->device, shad->cmdPool,registeredSwaps[i]->imageCount);
+            std::vector<VkCommandBuffer>* tmpClearBuffs = CreateCommandBuffers(shad->device, shad->cmdPool,registeredSwaps[i]->imageCount);
+            group->mainDraw = tmpDrawBuffs;
+            group->clearDraw = tmpClearBuffs;
+            // drawCmds.push_back(tmpCmdBuffs);
+            FillCommandBuffers(registeredSwaps[i]->swapExtent, &drawTargs[i]->frames,drawTargs[i]->graphicsPipeline, drawTargs[i]->renderpass->renderpass,this,tmpDrawBuffs);
+            FillCommandBuffers(registeredSwaps[i]->swapExtent, &drawTargs[i]->frames,drawTargs[i]->graphicsPipeline, drawTargs[i]->renderpass->clearpass,this,tmpClearBuffs);
         }
         i++;
     }

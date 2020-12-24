@@ -14,7 +14,7 @@ int main() {
 	ShaderGroup group = ShaderGroup(0);//will contain description of renderpass in the future, or nothing for default
 
 	ID* id = new ID(0,0,PER_VERTEX,&Test,&Test.pos,&Test.color);
-	Shader* shad = new Shader({id},&group,"src/shaders/mainShad");
+	Shader* shad = new Shader({id},&group,"Volcano/src/shaders/mainShad");
 	// Shader* secondShad = new Shader({id},&group,"Volcano/src/shaders/secondVertex.spv","Volcano/src/shaders/fragment.spv");
 
 

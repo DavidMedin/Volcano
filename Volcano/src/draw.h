@@ -14,8 +14,9 @@ struct SwapChain;
 struct Window;
 struct Device;
 
-
+struct DrawObj;
 struct DrawCmdGroup{
+    DrawObj* draw;
     std::vector<VkCommandBuffer>* mainDraw;
     std::vector<VkCommandBuffer>* clearDraw;
 };
@@ -34,5 +35,6 @@ struct DrawObj{
     DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,IndexBuffer* index,Shader* shad);
     DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,Shader* shad);
     void RegisterSwapChain(SwapChain* swap);
+    void RecalculateCmdBuffs(DrawCmdGroup* group);
     void QueueDraw(Window* win);
 };

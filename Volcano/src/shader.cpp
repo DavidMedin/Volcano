@@ -90,7 +90,7 @@ Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup, const ch
     cmdPool = CreateCommandPool(this->device);
     pipelineLayout = CreatePipeLayout(device);
     shadModCount = 2;
-    shadMods = (VkShaderModule*)malloc(sizeof(VkShaderModule));
+    shadMods = (ShaderMod*)malloc(sizeof(ShaderMod)*shadModCount);
 
     const char* shaders[] = { vertexPath.c_str(),fragmentPath.c_str() };
     const shaderc_shader_kind shad_progress[2] = {shaderc_vertex_shader,shaderc_fragment_shader};
@@ -104,11 +104,10 @@ Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup, const ch
             Error("%s\n",compileRez.GetErrorMessage().c_str());
         }
         std::vector<uint32_t> spirvCode = std::vector<uint32_t>(compileRez.cbegin(),compileRez.cend());
-        shadMods[i] = CreateShaderModule(device, &spirvCode);
+        shadMods[i].mod = CreateShaderModule(device, &spirvCode);
         free(glslCode);
     }
-    //use spriv-reflect to get shader input ID
-
+    //use spriv-reflect to get shader input ID of vertex Shader
 
     for(auto id : ids){
         inputDescs.push_back(id);
@@ -123,14 +122,14 @@ Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const cha
     cmdPool = CreateCommandPool(this->device);
     pipelineLayout = CreatePipeLayout(device);
     shadModCount = 2;
-    shadMods = (VkShaderModule*)malloc(sizeof(VkShaderModule));
+    shadMods = (ShaderMod*)malloc(sizeof(ShaderMod)*shadModCount);
 
     const char* shaders[] = { vertexShader,fragmentShader };
     for (unsigned int i = 0; i < shadModCount; i++) {
         unsigned int codeSize = 0;
         char* code;
         ReadTheFile(shaders[i], &code, &codeSize);
-        shadMods[i] = CreateShaderModule(device, code, codeSize);
+        shadMods[i].mod = CreateShaderModule(device, code, codeSize);
         free(code);
     }
     //use spriv-reflect to get shader input ID
@@ -177,7 +176,7 @@ bool Shader::ContainsSwap(SwapChain* swap){
 
 Shader::~Shader() {
     for (unsigned int i = 0; i < shadModCount; i++) {
-        vkDestroyShaderModule(device->device, shadMods[i], NULL);
+        vkDestroyShaderModule(device->device, shadMods[i].mod, NULL);
     }
     vkDestroyCommandPool(device->device, cmdPool, NULL);
     vkDestroyPipelineLayout(device->device, pipelineLayout, NULL);
@@ -209,7 +208,7 @@ VkPipeline CreateGraphicsPipeline(Device* device, VkPipelineLayout layout, VkRen
     for (unsigned int i = 0; i < 2; i++) {
         shaderStages[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStages[i].stage = bits[i];
-        shaderStages[i].module = shad->shadMods[i];
+        shaderStages[i].module = shad->shadMods[i].mod;
         shaderStages[i].pName = "main";//this means we can define the entrypoint!!
         shaderStages[i].pSpecializationInfo = NULL;//defines constants so Vulkan can optimize the shader around them! Very cool.
     }
