@@ -48,7 +48,7 @@ struct Shader{
 
 	std::list<ID*> inputDescs;
 
-	Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
+	Shader(ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
 	Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* glslShader);
 	~Shader();
 

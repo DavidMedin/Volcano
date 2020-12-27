@@ -1,6 +1,3 @@
 [submodule "Volcano/libs/glm"]
 	path = Volcano/libs/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "Volcano/libs/Spirv-reflect"]
-	path = Volcano/libs/Spirv-reflect
-	url = https://github.com/khronosgroup/Spirv-reflect

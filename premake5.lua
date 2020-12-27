@@ -9,7 +9,7 @@ project "Volcano"
 	targetdir "bin/%{cfg.buildcfg}"
 	
 	files {"Volcano/src/*.*","Volcano/libs/SPIRV-Reflect/spirv_reflect.c","Volcano/libs/SPIRV-Reflect/spirv_reflect.h"}--includes all the c/h files
-
+--,"Volcano/libs/SPIRV-Reflect/spirv_reflect.c","Volcano/libs/SPIRV-Reflect/spirv_reflect.h"
 	-- group "Spirv-Reflect"
 	-- 	files {"Volcano/src/libs/SPIRV-Reflect/*.*"}
 	-- group ""

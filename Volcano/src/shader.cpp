@@ -76,7 +76,7 @@ VkShaderModule CreateShaderModule(Device* device, std::vector<uint32_t>* code) {
     return shader;
 }
 
-Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup, const char* glslShader){
+Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
     std::string vertexPath = std::string(glslShader);
     std::string fragmentPath = std::string(glslShader);
     vertexPath.append(".vert");
@@ -90,7 +90,7 @@ Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup, const ch
     cmdPool = CreateCommandPool(this->device);
     pipelineLayout = CreatePipeLayout(device);
     shadModCount = 2;
-    shadMods = (ShaderMod*)malloc(sizeof(ShaderMod)*shadModCount);
+    shadMods = new ShaderMod[2];
 
     const char* shaders[] = { vertexPath.c_str(),fragmentPath.c_str() };
     const shaderc_shader_kind shad_progress[2] = {shaderc_vertex_shader,shaderc_fragment_shader};
@@ -103,15 +103,15 @@ Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup, const ch
         if(compileRez.GetCompilationStatus() != shaderc_compilation_status_success){
             Error("%s\n",compileRez.GetErrorMessage().c_str());
         }
-        std::vector<uint32_t> spirvCode = std::vector<uint32_t>(compileRez.cbegin(),compileRez.cend());
-        shadMods[i].mod = CreateShaderModule(device, &spirvCode);
+        shadMods[i].code = std::vector<uint32_t>(compileRez.cbegin(),compileRez.cend());
+        shadMods[i].mod = CreateShaderModule(device, &shadMods[i].code);
         free(glslCode);
     }
     //use spriv-reflect to get shader input ID of vertex Shader
-
-    for(auto id : ids){
-        inputDescs.push_back(id);
-    }
+    
+    // for(auto id : ids){
+    //     inputDescs.push_back(id);
+    // }
 
     shadList.push_back(this);
 }

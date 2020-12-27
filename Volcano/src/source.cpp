@@ -26,7 +26,6 @@ int main() {
 	buff->WriteData(0,pos.data(),color.data());
 
 	DrawObj* buffDraw = new DrawObj({buff},shad);
-	DrawObj* drawSecond = new DrawObj({buff},shad);
 
 	window = new Window("TestWindow");
 
@@ -41,7 +40,6 @@ int main() {
 		beforeTime = afterTime;
 
 		buffDraw->QueueDraw(window);
-		drawSecond->QueueDraw(window);
 		window->Draw();
 		glfwPollEvents();
 	}
