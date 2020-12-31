@@ -1,10 +1,10 @@
 #include "source.h"
 Window* window;
 
-// struct Test_t{
-// 	glm::vec2 pos;
-// 	glm::vec3 color;
-// }Test;
+struct Test_t{
+	glm::vec2 pos;
+	glm::vec3 color;
+}Test;
 
 int main() {
 
@@ -13,18 +13,23 @@ int main() {
 
 	ShaderGroup group = ShaderGroup(0);//will contain description of renderpass in the future, or nothing for default
 
-	Shader* shad = new Shader(&group,"Volcano/src/shaders/mainShad");
+	ID* posID = new ID(0,0,PER_VERTEX,&Test,&Test.pos);
+	ID* colorID = new ID(1,1,PER_VERTEX,&Test,&Test.color);
+
+	Shader* shad = new Shader({posID,colorID},&group,"Volcano/src/shaders/mainShad");
 	// Shader* secondShad = new Shader({id},&group,"Volcano/src/shaders/secondVertex.spv","Volcano/src/shaders/fragment.spv");
 
 
-	VertexBuffer* buff = new VertexBuffer(shad->GetNthID(0),3);
+	VertexBuffer* posBuff = new VertexBuffer(shad->GetNthID(0),3);
+	VertexBuffer* colorBuff = new VertexBuffer(shad->GetNthID(1),3);
 	std::vector<glm::vec2> pos = {{0.0f, -0.5f},{0.5f, 0.5f},{-0.5f, 0.5f}};
 	std::vector<glm::vec3> color = {{1.0f, 0.0f, 0.0f},{0.0f, 1.0f, 0.0f},{1.0f, 0.0f, 1.0f}};
 
 
-	buff->WriteData(0,pos.data(),color.data());
+	posBuff->WriteData(0,pos.data());
+	colorBuff->WriteData(0,color.data());
 
-	DrawObj* buffDraw = new DrawObj({buff},shad);
+	DrawObj* buffDraw = new DrawObj({posBuff,colorBuff},shad);
 
 	window = new Window("TestWindow");
 

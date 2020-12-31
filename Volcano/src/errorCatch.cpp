@@ -5,7 +5,4 @@ void __Error(const char* file,const long line,const char* string,...){
     va_start(args,string);
     printf("%s:%d -> ",file,line);
     vprintf(string,args);
-    #ifdef ENABLE_BREAKPOINTS
-        __debugbreak();
-    #endif
 }

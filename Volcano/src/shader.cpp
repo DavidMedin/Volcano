@@ -78,7 +78,7 @@ VkShaderModule CreateShaderModule(Device* device, std::vector<uint32_t>* code) {
     return shader;
 }
 
-Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
+void CompileSpv(Shader* shad,const char* glslShader,ShaderMod* shadMods,unsigned int shadModCount){
     std::string vertexPath = std::string(glslShader);
     std::string fragmentPath = std::string(glslShader);
     vertexPath.append(".vert");
@@ -86,14 +86,6 @@ Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
 
     shaderc::Compiler compiler;
     shaderc::CompileOptions options;
-
-    this->device = GetCurrentDevice();
-    this->group = shaderGroup;
-    cmdPool = CreateCommandPool(this->device);
-    pipelineLayout = CreatePipeLayout(device);
-    shadModCount = 2;
-    shadMods = new ShaderMod[2];
-
     const char* shaders[] = { vertexPath.c_str(),fragmentPath.c_str() };
     const shaderc_shader_kind shad_progress[2] = {shaderc_vertex_shader,shaderc_fragment_shader};
     for (unsigned int i = 0; i < shadModCount; i++) {
@@ -106,11 +98,24 @@ Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
             Error("%s\n",compileRez.GetErrorMessage().c_str());
         }
         shadMods[i].code = std::vector<uint32_t>(compileRez.cbegin(),compileRez.cend());
-        shadMods[i].mod = CreateShaderModule(device, &shadMods[i].code);
+        shadMods[i].mod = CreateShaderModule(shad->device, &shadMods[i].code);
         free(glslCode);
     }
+}
+
+Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
+
+
+    this->device = GetCurrentDevice();
+    this->group = shaderGroup;
+    cmdPool = CreateCommandPool(this->device);
+    pipelineLayout = CreatePipeLayout(device);
+    shadModCount = 2;
+    shadMods = new ShaderMod[2];
+
+    CompileSpv(this,glslShader,shadMods,2);
+
     //use spriv-reflect to get shader input ID of vertex Shader
-    
     SpvReflectResult rez = spvReflectCreateShaderModule(shadMods[0].code.size()*4,shadMods[0].code.data(),&mod);
     assert(rez == SPV_REFLECT_RESULT_SUCCESS);
 
@@ -123,6 +128,22 @@ Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
     assert(inputCount != 0);
 
     inputDescs.push_back(new ID(0,0,NULL,BufferRate::PER_VERTEX,this));
+
+    shadList.push_back(this);
+}
+Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* glslShader){
+    this->device = GetCurrentDevice();
+    this->group = shaderGroup;
+    cmdPool = CreateCommandPool(this->device);
+    pipelineLayout = CreatePipeLayout(device);
+    shadModCount = 2;
+    shadMods = new ShaderMod[2];
+
+    CompileSpv(this,glslShader,shadMods,2);
+
+    for(auto id : ids){
+        inputDescs.push_back(id);
+    }
 
     shadList.push_back(this);
 }

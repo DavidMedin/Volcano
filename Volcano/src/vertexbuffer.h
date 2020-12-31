@@ -62,7 +62,7 @@ struct ID{
 	}
 
 	template <class structType, class First, class ...Rest>//second is to solve ambiguity
-	int ItterAtrib(std::vector<VkVertexInputAttributeDescription>* vec,  unsigned int bufferLoc,unsigned int 	beginLoc,unsigned int index,structType* inStruct,First* first, Rest*... rest){
+	int ItterAtrib(std::vector<VkVertexInputAttributeDescription>* vec,  unsigned int bufferLoc,unsigned int beginLoc,unsigned int index,structType* inStruct,First* first, Rest*... rest){
 		VkVertexInputAttributeDescription desc = {0};
 		desc.binding = bufferLoc;
 		desc.location = beginLoc+index;
@@ -77,7 +77,7 @@ struct ID{
 		bindDesc = {0};
 		bindDesc.binding = bufferLoc;
 		bindDesc.stride = sizeof(structType);
-
+		size = bindDesc.stride;
 		switch(rate){
 			case PER_VERTEX:
 				bindDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;

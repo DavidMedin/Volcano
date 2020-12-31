@@ -77,15 +77,19 @@ void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* f
         vkCmdBeginRenderPass(deCmdBuffs[i],&renderStartInfo,VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(deCmdBuffs[i],VK_PIPELINE_BIND_POINT_GRAPHICS,graphicsPipeline);
 
-        VkBuffer vertBuffArray[1] = {};
-        VkDeviceSize offsets[1] = {0};
+        size_t buffCount = drawObj->vertBuffs.size();
+        VkBuffer* vertBuffArray = (VkBuffer*)malloc(sizeof(VkBuffer)*buffCount);
+        VkDeviceSize* offsets = (VkDeviceSize*)calloc(1,sizeof(VkDeviceSize)*buffCount);
         unsigned int index = 0;
         for(auto buff : drawObj->vertBuffs){
-            vertBuffArray[index] = buff->stageBuff;
+            vertBuffArray[index] = buff->fastBuff;//was stage buff before?
             index++;
         }
         vkCmdBindVertexBuffers(deCmdBuffs[i],0,(unsigned int)drawObj->vertBuffs.size(),vertBuffArray,offsets);
         vkCmdDraw(deCmdBuffs[i],drawObj->vertNum,1,0,0);
+
+        free(vertBuffArray);
+        free(offsets);
         //end the cmd recording
         vkCmdEndRenderPass(deCmdBuffs[i]);
         if(vkEndCommandBuffer(deCmdBuffs[i]) != VK_SUCCESS){
