@@ -95,3 +95,75 @@ void CreateBuffer(Device* device,uint64_t size, int usage,VkSharingMode share,Vk
 
 	vkBindBufferMemory(device->device,*buff,*buffMem,0);
 }
+
+unsigned int FormatSize(VkFormat format){
+	switch(format){
+		case VK_FORMAT_R8_SINT: return 1;
+		case VK_FORMAT_R8_UINT: return 1;
+		case VK_FORMAT_R8G8_SINT: return 2;
+		case VK_FORMAT_R8G8_UINT: return 2;
+		case VK_FORMAT_R8G8B8_SINT: return 3;
+		case VK_FORMAT_R8G8B8_UINT: return 3;
+		case VK_FORMAT_R16_SINT: return 2;
+		case VK_FORMAT_R16_UINT: return 2;
+		case VK_FORMAT_R16_SFLOAT: return 2;
+		case VK_FORMAT_R16G16_SINT: return 4;
+		case VK_FORMAT_R16G16_UINT: return 4;
+		case VK_FORMAT_R16G16_SFLOAT: return 4;
+		case VK_FORMAT_R16G16B16_SINT: return 6;
+		case VK_FORMAT_R16G16B16_UINT: return 6;
+		case VK_FORMAT_R16G16B16_SFLOAT: return 6;
+		case VK_FORMAT_R16G16B16A16_SINT: return 8;
+		case VK_FORMAT_R16G16B16A16_UINT: return 8;
+		case VK_FORMAT_R16G16B16A16_SFLOAT: return 8;
+		case VK_FORMAT_R32_SINT: return 4;
+		case VK_FORMAT_R32_UINT: return 4;
+		case VK_FORMAT_R32_SFLOAT: return 4;
+		case VK_FORMAT_R32G32_SINT: return 8;
+		case VK_FORMAT_R32G32_UINT: return 8;
+		case VK_FORMAT_R32G32_SFLOAT: return 8;
+		case VK_FORMAT_R32G32B32_SINT: return 12;
+		case VK_FORMAT_R32G32B32_UINT: return 12;
+		case VK_FORMAT_R32G32B32_SFLOAT: return 12;
+		case VK_FORMAT_R32G32B32A32_SINT: return 16;
+		case VK_FORMAT_R32G32B32A32_UINT: return 16;
+		case VK_FORMAT_R32G32B32A32_SFLOAT: return 16;
+		case VK_FORMAT_R64_SINT: return 8;
+		case VK_FORMAT_R64_UINT: return 8;
+		case VK_FORMAT_R64_SFLOAT: return 8;
+		case VK_FORMAT_R64G64_SINT: return 16;
+		case VK_FORMAT_R64G64_UINT: return 16;
+		case VK_FORMAT_R64G64_SFLOAT: return 16;
+		case VK_FORMAT_R64G64B64_SINT: return 24;
+		case VK_FORMAT_R64G64B64_UINT: return 24;
+		case VK_FORMAT_R64G64B64_SFLOAT: return 24;
+		case VK_FORMAT_R64G64B64A64_SINT: return 32;
+		case VK_FORMAT_R64G64B64A64_UINT: return 32;
+		case VK_FORMAT_R64G64B64A64_SFLOAT: return 32;
+		default: Error("%d is not a valid arg to FormatSize!\n");
+		return NULL;
+	}
+}
+
+ID::ID(unsigned int bufferLoc,unsigned int beginLoc,unsigned int endLoc,BufferRate rate,Shader* shad){
+	bindDesc = {0};
+	bindDesc.binding = bufferLoc;
+	bindDesc.stride = 0;//going to update this later
+
+	if(beginLoc > endLoc) Error("beginLoc is greater then endLoc in ID initializer!\n");
+	if(beginLoc < 0) Error("beginLoc is less than zero! (can't be negative)\n");
+	if(endLoc != NULL && endLoc > shad->inputCount-1) Error("endLoc is greater than the number of input variables! (maybe set endLoc to NULL for \'to end\')");
+	
+	for(unsigned int i = beginLoc;i < ((endLoc == NULL) ? shad->inputCount : endLoc+1);i++){
+		VkVertexInputAttributeDescription desc= {0};
+		desc.binding = bufferLoc;
+		desc.location = i;
+		desc.format = (VkFormat)shad->inputVars[i]->format;
+		desc.offset = bindDesc.stride;
+		bindDesc.stride += FormatSize(desc.format);
+		attribDescs.push_back(desc);
+	}
+	size = bindDesc.stride;
+}
+
+

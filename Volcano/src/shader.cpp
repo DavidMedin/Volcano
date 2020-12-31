@@ -1,7 +1,9 @@
+
 #include "shader.h"
 #include "swapchain.h"
 #include "vertexbuffer.h"
 #include "window.h"
+
 std::list<SwapChain*> swapList;
 std::list<Shader*> shadList;
 
@@ -109,9 +111,18 @@ Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
     }
     //use spriv-reflect to get shader input ID of vertex Shader
     
-    // for(auto id : ids){
-    //     inputDescs.push_back(id);
-    // }
+    SpvReflectResult rez = spvReflectCreateShaderModule(shadMods[0].code.size()*4,shadMods[0].code.data(),&mod);
+    assert(rez == SPV_REFLECT_RESULT_SUCCESS);
+
+    rez = spvReflectEnumerateInputVariables(&mod,&inputCount,NULL);
+    assert(rez == SPV_REFLECT_RESULT_SUCCESS);
+    assert(inputCount != 0);
+    inputVars = (SpvReflectInterfaceVariable**)malloc(sizeof(SpvReflectInterfaceVariable)*inputCount);
+    rez = spvReflectEnumerateInputVariables(&mod,&inputCount,inputVars);
+    assert(rez == SPV_REFLECT_RESULT_SUCCESS);
+    assert(inputCount != 0);
+
+    inputDescs.push_back(new ID(0,0,NULL,BufferRate::PER_VERTEX,this));
 
     shadList.push_back(this);
 }
@@ -173,6 +184,15 @@ bool Shader::ContainsSwap(SwapChain* swap){
     return false;
 }
 
+ID* Shader::GetNthID(unsigned int n){
+    unsigned int i = 0;
+    for(auto id: inputDescs){
+        if(i == n) return id;
+        i++;
+    }
+    Error("n (%u) is out of range in getNTHID\n",n);
+    return nullptr;
+}
 
 Shader::~Shader() {
     for (unsigned int i = 0; i < shadModCount; i++) {

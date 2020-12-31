@@ -2,7 +2,10 @@
 #include <vector>
 #include <list>
 
+#undef SPV_REVISION
+#include "spirv_reflect.h"
 #include "shaderc/shaderc.hpp"
+#undef SPV_REVISION
 
 #include "renderpass.h"
 #include "globalVulkan.h"
@@ -46,17 +49,22 @@ struct Shader{
 	VkCommandPool cmdPool;
 	std::list<DrawTarget*> drawTargs;
 
+	SpvReflectInterfaceVariable** inputVars;
+	unsigned int inputCount;
+	SpvReflectShaderModule mod;
 	std::list<ID*> inputDescs;
 
-	Shader(ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
-	Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* glslShader);
+	Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
+	Shader(ShaderGroup* shaderGroup,const char* glslShader);
 	~Shader();
 
 	void RegisterSwapChain(SwapChain* swap);
 	void DestroySwapChain(SwapChain* swap);
+
 	void DrawFrame(Window* window);
 
 	bool ContainsSwap(SwapChain*);
+	ID* GetNthID(unsigned int n);
 };
 
 

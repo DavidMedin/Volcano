@@ -63,6 +63,9 @@
 		"deque": "cpp",
 		"fstream": "cpp",
 		"regex": "cpp",
-		"stack": "cpp"
+		"stack": "cpp",
+		"forward_list": "cpp",
+		"hash_map": "cpp",
+		"hash_set": "cpp"
 	}
 }

@@ -13,6 +13,8 @@
 
 #define GETTYPE(T) typeid(T).hash_code()
 
+struct Shader;
+
 enum BufferRate{
 	PER_VERTEX,
 	PER_INSTANCE
@@ -45,7 +47,7 @@ void CreateBuffer(Device* device,uint64_t size, int usage,VkSharingMode share,Vk
 struct ID{
 	VkVertexInputBindingDescription bindDesc;
 	std::vector<VkVertexInputAttributeDescription> attribDescs;
-
+	size_t size;
 	
 	template<class structType, class Last>
 	int ItterAtrib(std::vector<VkVertexInputAttributeDescription>* vec,  unsigned int bufferLoc,unsigned int 	beginLoc,unsigned int index,structType* inStruct,Last* last){
@@ -90,6 +92,7 @@ struct ID{
 		ItterAtrib<structType,TypesT...>(&attribDescs,bufferLoc,beginLoc,0,inStruct,data...);
 
 	}
+	ID(unsigned int bufferLoc,unsigned int beginLoc,unsigned int endLoc,BufferRate rate,Shader* shad);
 };
 
 struct Shader;
@@ -151,11 +154,12 @@ struct VertexBuffer {
 	//don't touch
 	void AddToList();
 
-	template <class structType>
-	VertexBuffer(ID* id,unsigned int vertNum,structType identity){
+	// template <class structType>
+	VertexBuffer(ID* id,unsigned int vertNum){
 	inDesc = id;
 	device = GetCurrentDevice();
-	memSize = sizeof(structType)*vertNum;
+	// memSize = sizeof(structType)*vertNum;
+	memSize = id->size*vertNum;
 	vertexNum = vertNum;
 	//create the staging buff buffer
 	CreateBuffer(device,memSize,VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,VK_SHARING_MODE_EXCLUSIVE,VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,&stageBuff,&stageMem);
@@ -163,11 +167,9 @@ struct VertexBuffer {
 	CreateBuffer(device,memSize,VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,VK_SHARING_MODE_EXCLUSIVE,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,&fastBuff,&fastBuffMem);
 
 	AddToList();
-}
+	}
+
 
 	~VertexBuffer();
 };
-
-
-
 

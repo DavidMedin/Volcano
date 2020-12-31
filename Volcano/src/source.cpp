@@ -1,10 +1,10 @@
 #include "source.h"
 Window* window;
 
-struct Test_t{
-	glm::vec2 pos;
-	glm::vec3 color;
-}Test;
+// struct Test_t{
+// 	glm::vec2 pos;
+// 	glm::vec3 color;
+// }Test;
 
 int main() {
 
@@ -13,12 +13,11 @@ int main() {
 
 	ShaderGroup group = ShaderGroup(0);//will contain description of renderpass in the future, or nothing for default
 
-	ID* id = new ID(0,0,PER_VERTEX,&Test,&Test.pos,&Test.color);
-	Shader* shad = new Shader({id},&group,"Volcano/src/shaders/mainShad");
+	Shader* shad = new Shader(&group,"Volcano/src/shaders/mainShad");
 	// Shader* secondShad = new Shader({id},&group,"Volcano/src/shaders/secondVertex.spv","Volcano/src/shaders/fragment.spv");
 
 
-	VertexBuffer* buff = new VertexBuffer(id,3,Test);
+	VertexBuffer* buff = new VertexBuffer(shad->GetNthID(0),3);
 	std::vector<glm::vec2> pos = {{0.0f, -0.5f},{0.5f, 0.5f},{-0.5f, 0.5f}};
 	std::vector<glm::vec3> color = {{1.0f, 0.0f, 0.0f},{0.0f, 1.0f, 0.0f},{1.0f, 0.0f, 1.0f}};
 
