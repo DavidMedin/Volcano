@@ -28,11 +28,33 @@ int ReadTheFile(const char* path, char** buff, unsigned int* buffSize) {
 }
 
 DrawTarget::~DrawTarget() {
-    vkDestroyPipeline(swapchain->device->device, graphicsPipeline, NULL);
+    for(auto i = inputs.begin() ; i != inputs.end();i++){
+        vkDestroyPipeline(swapchain->device->device, (*i)->pipeline, NULL);
+        // inputs.remove(*i);
+        // delete input;//uh oh
+    }
+    inputs.clear();
     for (auto frame : frames) {
         vkDestroyFramebuffer(swapchain->device->device, frame, NULL);
     }
 
+}
+
+bool DrawInput::IDEquals(std::list<ID*> ids){
+    //hash?
+    //is list good?
+    for(auto drawID : inputDescs){
+        bool found = false;
+        for(auto id : ids){
+            if(id == drawID){
+                found = true;
+            }
+        }
+        if(found == false){
+            return false;
+        }
+    }
+    return true;
 }
 
 void CreateFramebuffers(VkDevice device, VkRenderPass render, VkImageView* imageViews, unsigned int imageCount, VkExtent2D extent, std::vector<VkFramebuffer>* framebuffIn) {
@@ -126,29 +148,29 @@ Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
     rez = spvReflectEnumerateInputVariables(&mod,&inputCount,inputVars);
     assert(rez == SPV_REFLECT_RESULT_SUCCESS);
     assert(inputCount != 0);
-
-    inputDescs.push_back(new ID(0,0,NULL,BufferRate::PER_VERTEX,this));
-
-    shadList.push_back(this);
-}
-Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* glslShader){
-    this->device = GetCurrentDevice();
-    this->group = shaderGroup;
-    cmdPool = CreateCommandPool(this->device);
-    pipelineLayout = CreatePipeLayout(device);
-    shadModCount = 2;
-    shadMods = new ShaderMod[2];
-
-    CompileSpv(this,glslShader,shadMods,2);
-
-    for(auto id : ids){
-        inputDescs.push_back(id);
-    }
+    // printf("%u\n",inputCount);
+    // inputDescs.push_back(new ID(0,0,NULL,BufferRate::PER_VERTEX,this));
 
     shadList.push_back(this);
 }
+// Shader::Shader(ShaderGroup* shaderGroup,const char* glslShader){
+//     this->device = GetCurrentDevice();
+//     this->group = shaderGroup;
+//     cmdPool = CreateCommandPool(this->device);
+//     pipelineLayout = CreatePipeLayout(device);
+//     shadModCount = 2;
+//     shadMods = new ShaderMod[2];
 
-Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader) {
+//     CompileSpv(this,glslShader,shadMods,2);
+
+//     // for(auto id : ids){
+//     //     inputDescs.push_back(id);
+//     // }
+
+//     shadList.push_back(this);
+// }
+
+Shader::Shader(ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader) {
     this->device = GetCurrentDevice();
     this->group = shaderGroup;
     cmdPool = CreateCommandPool(this->device);
@@ -167,9 +189,9 @@ Shader::Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const cha
     //use spriv-reflect to get shader input ID
 
 
-    for(auto id : ids){
-        inputDescs.push_back(id);
-    }
+    // for(auto id : ids){
+    //     inputDescs.push_back(id);
+    // }
 
     shadList.push_back(this);
 }
@@ -178,13 +200,12 @@ void Shader::RegisterSwapChain(SwapChain* swap) {
     DrawTarget* target = new DrawTarget;
     target->swapchain = swap;
     target->renderpass = CreateRenderpass(swap->GetFormat(), device, group);
-    target->graphicsPipeline = CreateGraphicsPipeline(device, pipelineLayout, target->renderpass->renderpass, swap->swapExtent, this);
+    // target->graphicsPipeline = CreateGraphicsPipeline(device, pipelineLayout, target->renderpass->renderpass, swap->swapExtent, this);
     target->frames.resize(swap->imageCount);
     CreateFramebuffers(device->device, target->renderpass->renderpass, swap->imageViews, swap->imageCount, swap->swapExtent, &target->frames);
 
 
     drawTargs.push_back(target);
-    //I hope this works
 }
 
 void Shader::DestroySwapChain(SwapChain* swap) {
@@ -205,15 +226,16 @@ bool Shader::ContainsSwap(SwapChain* swap){
     return false;
 }
 
-ID* Shader::GetNthID(unsigned int n){
-    unsigned int i = 0;
-    for(auto id: inputDescs){
-        if(i == n) return id;
-        i++;
-    }
-    Error("n (%u) is out of range in getNTHID\n",n);
-    return nullptr;
-}
+// ID* Shader::GetNthID(unsigned int n){
+//     unsigned int i = 0;
+//     for(auto id: inputDescs){
+//         if(i == n) return id;
+//         i++;
+//     }
+//     Error("n (%u) is out of range in getNTHID\n",n);
+//     return nullptr;
+// }
+
 
 Shader::~Shader() {
     for (unsigned int i = 0; i < shadModCount; i++) {
@@ -224,7 +246,7 @@ Shader::~Shader() {
     if (drawTargs.size() != 0) {
         Error("Didn't destroy all swapchains. Please destroy them before the shader.\n");
     }
-    std::list<VertexBuffer*> delList;
+    // std::list<VertexBuffer*> delList;
 
 }
 
@@ -241,7 +263,7 @@ VkPipelineLayout CreatePipeLayout(Device* device) {
     return pipelineLayout;
 }
 
-VkPipeline CreateGraphicsPipeline(Device* device, VkPipelineLayout layout, VkRenderPass renderPass, VkExtent2D viewExtent, Shader* shad) {
+VkPipeline CreateGraphicsPipeline(Device* device, VkPipelineLayout layout, VkRenderPass renderPass, VkExtent2D viewExtent, ShaderMod* mods,unsigned int modCount,std::list<ID*> inputDescs) {
     //assign the shader stage (vertexShaderMod to vertex shader stage)
     VkPipelineShaderStageCreateInfo shaderStages[2] = { {},{} };
     VkShaderStageFlagBits bits[2] = { VK_SHADER_STAGE_VERTEX_BIT,VK_SHADER_STAGE_FRAGMENT_BIT };
@@ -249,7 +271,7 @@ VkPipeline CreateGraphicsPipeline(Device* device, VkPipelineLayout layout, VkRen
     for (unsigned int i = 0; i < 2; i++) {
         shaderStages[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStages[i].stage = bits[i];
-        shaderStages[i].module = shad->shadMods[i].mod;
+        shaderStages[i].module = mods[i].mod;
         shaderStages[i].pName = "main";//this means we can define the entrypoint!!
         shaderStages[i].pSpecializationInfo = NULL;//defines constants so Vulkan can optimize the shader around them! Very cool.
     }
@@ -258,10 +280,10 @@ VkPipeline CreateGraphicsPipeline(Device* device, VkPipelineLayout layout, VkRen
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
     unsigned int attribCount = 0;
-    vertexInputInfo.vertexBindingDescriptionCount = (unsigned int)shad->inputDescs.size();
+    vertexInputInfo.vertexBindingDescriptionCount = (unsigned int)inputDescs.size();
     std::vector<VkVertexInputBindingDescription> tmpBindings;
     std::vector<VkVertexInputAttributeDescription> tmpAttribs;
-    for (auto desc : shad->inputDescs) {
+    for (auto desc : inputDescs) {
         tmpBindings.push_back(desc->bindDesc);
         for (auto attrib : desc->attribDescs) {
             tmpAttribs.push_back(attrib);

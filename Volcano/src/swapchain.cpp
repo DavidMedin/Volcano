@@ -293,17 +293,19 @@ void SwapChain::Recreate() {
         for (auto command : shad->drawTargs) {
             if (command->swapchain == this) {
                 command->renderpass = CreateRenderpass(command->swapchain->GetFormat(), device, shad->group);//this should get an existing renderpass, dunno tho
-
-                vkDestroyPipeline(device->device, command->graphicsPipeline, NULL);
-                command->graphicsPipeline = CreateGraphicsPipeline(device, shad->pipelineLayout, command->renderpass->renderpass, swapExtent, shad);
+                for(auto input:command->inputs){
+                    vkDestroyPipeline(device->device, input->pipeline, NULL);
+                    input->pipeline = CreateGraphicsPipeline(device, shad->pipelineLayout, command->renderpass->renderpass, swapExtent, shad->shadMods,shad->shadModCount,input->inputDescs);
+                }
                 //delete/create new framebuffers
                 for (auto framebuffer : command->frames) {
                     vkDestroyFramebuffer(device->device, framebuffer, NULL);
                 }
                 CreateFramebuffers(device->device, command->renderpass->renderpass, imageViews, imageCount, swapExtent, &command->frames);
-
-                for(auto cmd : command->cmds){
-                    cmd->draw->RecalculateCmdBuffs(cmd);
+                for(auto input: command->inputs){
+                    for(auto cmd : input->cmds){
+                        cmd->draw->RecalculateCmdBuffs(cmd);
+                    }
                 }
             }
         }

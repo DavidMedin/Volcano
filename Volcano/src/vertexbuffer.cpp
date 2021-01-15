@@ -152,9 +152,8 @@ ID::ID(unsigned int bufferLoc,unsigned int beginLoc,unsigned int endLoc,BufferRa
 
 	if(beginLoc > endLoc) {Error("beginLoc is greater then endLoc in ID initializer!\n");}
 	if(beginLoc < 0) {Error("beginLoc is less than zero! (can't be negative)\n");}
-	if(endLoc != NULL && endLoc > shad->inputCount-1) {Error("endLoc is greater than the number of input variables! (maybe set endLoc to NULL for \'to end\')");}
-	
-	for(unsigned int i = beginLoc;i < ((endLoc == NULL) ? shad->inputCount : endLoc+1);i++){
+	if(endLoc > shad->inputCount-1) {Error("endLoc is greater than the number of input variables! (maybe set endLoc to NULL for \'to end\')");}
+	for(unsigned int i = beginLoc;i < endLoc+1;i++){
 		VkVertexInputAttributeDescription desc= {0};
 		desc.binding = bufferLoc;
 		desc.location = i;

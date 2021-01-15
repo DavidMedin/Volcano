@@ -15,11 +15,37 @@ bool DrawContains(DrawObj* obj, SwapChain* swap){
 void DrawObj::RegisterSwapChain(SwapChain* swap){
     if(!DrawContains(this,swap)){
         if(!shad->ContainsSwap(swap)) shad->RegisterSwapChain(swap);
+        std::list<ID*> tmpIDs;
+        for(auto vert : vertBuffs){
+            tmpIDs.push_back(vert->inDesc);
+        }
         DrawTarget* tmpTarg;
+        DrawInput* tmpInput;
         for(auto targ:shad->drawTargs){
             if(targ->swapchain == swap){
-                drawTargs.push_back(targ);
                 tmpTarg = targ;
+                bool found = false;
+                for(auto input:targ->inputs){
+                    if(input->IDEquals(tmpIDs)){
+                        drawInputs.push_back(input);
+                        tmpInput = input;
+                        found = true;
+                        break;
+                    }
+                }
+                if(found == false){
+                    //Create a new DrawInput
+                    DrawInput* in = new DrawInput;
+                    in->targ = targ;
+                    for(auto id : tmpIDs){
+                        in->inputDescs.push_back(id);
+                    }
+                    in->pipeline = CreateGraphicsPipeline(device,shad->pipelineLayout,targ->renderpass->renderpass,targ->swapchain->swapExtent,shad->shadMods,shad->shadModCount,in->inputDescs);
+                    tmpInput = in;
+                    targ->inputs.push_back(in);
+                    drawInputs.push_back(in);
+                }
+                break;
             }
         }
         //create/fill cmd buffers
@@ -29,12 +55,12 @@ void DrawObj::RegisterSwapChain(SwapChain* swap){
         tmpDrawGroup->mainDraw = tmpDrawBuffs;
         tmpDrawGroup->clearDraw = tmpClearBuffs;
         // drawCmds.push_back(tmpCmdBuffs);
-        FillCommandBuffers(swap->swapExtent, &tmpTarg->frames,tmpTarg->graphicsPipeline, tmpTarg->renderpass->renderpass,this,tmpDrawBuffs);
-        FillCommandBuffers(swap->swapExtent, &tmpTarg->frames,tmpTarg->graphicsPipeline, tmpTarg->renderpass->clearpass,this,tmpClearBuffs);
+        FillCommandBuffers(swap->swapExtent, &tmpTarg->frames,tmpInput->pipeline,tmpTarg->renderpass->renderpass,this,tmpDrawBuffs);
+        FillCommandBuffers(swap->swapExtent, &tmpTarg->frames,tmpInput->pipeline, tmpTarg->renderpass->clearpass,this,tmpClearBuffs);
 
         for(auto targ:shad->drawTargs){
             if(targ->swapchain == swap){
-                targ->cmds.push_back(tmpDrawGroup);
+                tmpInput->cmds.push_back(tmpDrawGroup);
             }
         }
 
@@ -87,8 +113,8 @@ void DrawObj::QueueDraw(Window* win){
     if(!DrawContains(this,swap)) RegisterSwapChain(swap);
 
     unsigned int i = 0;
-    for (auto targetCommands : drawTargs) {
-        if (targetCommands->swapchain == swap) {
+    for (auto input : drawInputs) {
+        if (input->targ->swapchain == swap) {
             swap->AddDrawCmd(drawCmds[i]);
             return;
         }
@@ -106,8 +132,8 @@ void DrawObj::RecalculateCmdBuffs(DrawCmdGroup* group){
             group->mainDraw = tmpDrawBuffs;
             group->clearDraw = tmpClearBuffs;
             // drawCmds.push_back(tmpCmdBuffs);
-            FillCommandBuffers(registeredSwaps[i]->swapExtent, &drawTargs[i]->frames,drawTargs[i]->graphicsPipeline, drawTargs[i]->renderpass->renderpass,this,tmpDrawBuffs);
-            FillCommandBuffers(registeredSwaps[i]->swapExtent, &drawTargs[i]->frames,drawTargs[i]->graphicsPipeline, drawTargs[i]->renderpass->clearpass,this,tmpClearBuffs);
+            FillCommandBuffers(registeredSwaps[i]->swapExtent, &drawInputs[i]->targ->frames,drawInputs[i]->pipeline, drawInputs[i]->targ->renderpass->renderpass,this,tmpDrawBuffs);
+            FillCommandBuffers(registeredSwaps[i]->swapExtent, &drawInputs[i]->targ->frames,drawInputs[i]->pipeline, drawInputs[i]->targ->renderpass->clearpass,this,tmpClearBuffs);
         }
         i++;
     }

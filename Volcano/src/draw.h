@@ -8,7 +8,7 @@
 
 struct VertexBuffer;
 struct IndexBuffer;
-struct DrawTarget;
+struct DrawInput;
 struct Shader;
 struct SwapChain;
 struct Window;
@@ -29,7 +29,7 @@ struct DrawObj{
     unsigned int vertNum;
 
     std::vector<SwapChain*> registeredSwaps;
-    std::vector<DrawTarget*> drawTargs;//per swapchain
+    std::vector<DrawInput*> drawInputs;//per swapchain per input
     std::vector<DrawCmdGroup*> drawCmds;
 
     DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,IndexBuffer* index,Shader* shad);

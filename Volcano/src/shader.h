@@ -20,18 +20,26 @@ struct VertexBuffer;
 struct SwapChain;
 struct Shader;
 struct DrawCmdGroup;
+struct Window;
+struct ID;
+struct DrawInput;//see below
 struct DrawTarget{
 	Shader* shad;
 	SwapChain* swapchain;
 	std::shared_ptr<RenderPass> renderpass;
-	VkPipeline graphicsPipeline;
+	// VkPipeline graphicsPipeline;
 	std::vector<VkFramebuffer> frames;
 
-	std::list<DrawCmdGroup*> cmds;
+	std::list<DrawInput*> inputs;
 	~DrawTarget();
 };
-struct Window;
-struct ID;
+struct DrawInput{
+	DrawTarget* targ;
+	std::list<ID*> inputDescs;
+	VkPipeline pipeline;
+	std::list<DrawCmdGroup*> cmds;
+	bool IDEquals(std::list<ID*> ids);
+};
 
 struct ShaderMod {
 	VkShaderModule mod;
@@ -52,11 +60,13 @@ struct Shader{
 	SpvReflectInterfaceVariable** inputVars;
 	unsigned int inputCount;
 	SpvReflectShaderModule mod;
-	std::list<ID*> inputDescs;
+	// std::list<ID*> inputDescs;
 
-	Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
+	Shader(ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
+	// Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
 	Shader(ShaderGroup* shaderGroup,const char* glslShader);
-	Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* glslShader);
+	// Shader(ShaderGroup* shaderGroup,const char* glslShader);
+	// Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* glslShader);
 	~Shader();
 
 	void RegisterSwapChain(SwapChain* swap);
@@ -65,13 +75,14 @@ struct Shader{
 	void DrawFrame(Window* window);
 
 	bool ContainsSwap(SwapChain*);
-	ID* GetNthID(unsigned int n);
+
+	// ID* GetNthID(unsigned int n);
 };
 
 
 int ReadTheFile(const char* path, char** buff, unsigned int* buffSize);
 VkPipelineLayout CreatePipeLayout(Device* device);
-VkPipeline CreateGraphicsPipeline(Device* device, VkPipelineLayout layout, VkRenderPass renderPass, VkExtent2D viewExtent, Shader* shad);
+VkPipeline CreateGraphicsPipeline(Device* device, VkPipelineLayout layout, VkRenderPass renderPass, VkExtent2D viewExtent, ShaderMod* mods,unsigned int modCount,std::list<ID*> inputDescs);
 
 VkShaderModule CreateShaderModule(Device* device, char* code, unsigned int codeSize);
 void DestroyShader(Device* device, Shader* shad);
