@@ -13,6 +13,7 @@ struct Shader;
 struct SwapChain;
 struct Window;
 struct Device;
+struct ID;
 
 struct DrawObj;
 struct DrawCmdGroup{
@@ -24,6 +25,7 @@ struct DrawCmdGroup{
 struct DrawObj{
     Device* device;
     std::vector<VertexBuffer*> vertBuffs;
+    std::vector<ID*> ids;
     IndexBuffer* indexBuff;
     Shader* shad;
     unsigned int vertNum;

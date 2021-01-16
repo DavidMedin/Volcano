@@ -40,7 +40,7 @@ DrawTarget::~DrawTarget() {
 
 }
 
-bool DrawInput::IDEquals(std::list<ID*> ids){
+bool DrawInput::IDEquals(std::vector<ID*> ids){
     //hash?
     //is list good?
     for(auto drawID : inputDescs){
@@ -126,8 +126,6 @@ void CompileSpv(Shader* shad,const char* glslShader,ShaderMod* shadMods,unsigned
 }
 
 Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
-
-
     this->device = GetCurrentDevice();
     this->group = shaderGroup;
     cmdPool = CreateCommandPool(this->device);
@@ -141,15 +139,19 @@ Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
     SpvReflectResult rez = spvReflectCreateShaderModule(shadMods[0].code.size()*4,shadMods[0].code.data(),&mod);
     assert(rez == SPV_REFLECT_RESULT_SUCCESS);
 
-    rez = spvReflectEnumerateInputVariables(&mod,&inputCount,NULL);
+    unsigned int inputCount = 0;
+    rez = spvReflectEnumerateInterfaceVariables(&mod,&inputCount,NULL);
     assert(rez == SPV_REFLECT_RESULT_SUCCESS);
     assert(inputCount != 0);
-    inputVars = (SpvReflectInterfaceVariable**)malloc(sizeof(SpvReflectInterfaceVariable)*inputCount);
-    rez = spvReflectEnumerateInputVariables(&mod,&inputCount,inputVars);
+    SpvReflectInterfaceVariable** tmpVars = (SpvReflectInterfaceVariable**)malloc(sizeof(SpvReflectInterfaceVariable)*inputCount);
+    rez = spvReflectEnumerateInterfaceVariables(&mod,&inputCount,tmpVars);
     assert(rez == SPV_REFLECT_RESULT_SUCCESS);
     assert(inputCount != 0);
-    // printf("%u\n",inputCount);
-    // inputDescs.push_back(new ID(0,0,NULL,BufferRate::PER_VERTEX,this));
+    for(unsigned int i = 0; i < inputCount;i++){
+        if((*tmpVars)[i].storage_class == SpvStorageClass::SpvStorageClassInput){
+            this->inputVars.push_back(&(*tmpVars)[i]);
+        }
+    }
 
     shadList.push_back(this);
 }
@@ -225,6 +227,34 @@ bool Shader::ContainsSwap(SwapChain* swap){
     }
     return false;
 }
+bool Shader::CompatibleID(std::vector<ID*> ids){
+    //store trues or falses about whether a input variable has been used up
+    bool* mask = (bool*)malloc(sizeof(bool)*inputVars.size());
+    for(unsigned int i = 0;i < inputVars.size();i++){
+        //this mask has not been used up
+        mask[i] = false;
+    }
+    for(auto id : ids){
+        for(auto potentInput : id->attribDescs){
+            bool found = false;
+            for(unsigned int i = 0;i < inputVars.size();i++){
+                if(mask[i] == false &&
+                inputVars[i]->format == potentInput.format &&
+                inputVars[i]->location == potentInput.location
+                ){
+                    mask[i] = true;
+                    found = true;
+                    break;
+                }
+            }
+            if(!found) {Error("Oh no! You must have overlapping vertexbuffer bounds or your bounds are out of shader bounds!\n");}
+        }
+    }
+    for(unsigned int i =0;i < inputVars.size();i++){
+        if(mask[i] == false) return false;
+    }
+    return true;
+}
 
 // ID* Shader::GetNthID(unsigned int n){
 //     unsigned int i = 0;
@@ -246,6 +276,7 @@ Shader::~Shader() {
     if (drawTargs.size() != 0) {
         Error("Didn't destroy all swapchains. Please destroy them before the shader.\n");
     }
+    spvReflectDestroyShaderModule(&mod);
     // std::list<VertexBuffer*> delList;
 
 }

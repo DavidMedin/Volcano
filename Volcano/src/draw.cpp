@@ -15,10 +15,10 @@ bool DrawContains(DrawObj* obj, SwapChain* swap){
 void DrawObj::RegisterSwapChain(SwapChain* swap){
     if(!DrawContains(this,swap)){
         if(!shad->ContainsSwap(swap)) shad->RegisterSwapChain(swap);
-        std::list<ID*> tmpIDs;
-        for(auto vert : vertBuffs){
-            tmpIDs.push_back(vert->inDesc);
-        }
+        // std::list<ID*> ids;
+        // for(auto vert : vertBuffs){
+        //     ids.push_back(vert->inDesc);
+        // }
         DrawTarget* tmpTarg;
         DrawInput* tmpInput;
         for(auto targ:shad->drawTargs){
@@ -26,7 +26,7 @@ void DrawObj::RegisterSwapChain(SwapChain* swap){
                 tmpTarg = targ;
                 bool found = false;
                 for(auto input:targ->inputs){
-                    if(input->IDEquals(tmpIDs)){
+                    if(input->IDEquals(ids)){
                         drawInputs.push_back(input);
                         tmpInput = input;
                         found = true;
@@ -37,7 +37,7 @@ void DrawObj::RegisterSwapChain(SwapChain* swap){
                     //Create a new DrawInput
                     DrawInput* in = new DrawInput;
                     in->targ = targ;
-                    for(auto id : tmpIDs){
+                    for(auto id : ids){
                         in->inputDescs.push_back(id);
                     }
                     in->pipeline = CreateGraphicsPipeline(device,shad->pipelineLayout,targ->renderpass->renderpass,targ->swapchain->swapExtent,shad->shadMods,shad->shadModCount,in->inputDescs);
@@ -98,10 +98,13 @@ DrawObj::DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,Shader* shad){
             Error("Vertex Buffer vertex number mismatch!\n");
             return;
         }
+        ids.push_back(vert->inDesc);
         this->vertBuffs[i] = vert;
         i++;
     }
-
+    if(!shad->CompatibleID(ids)){
+        Error("Vertex buffers given to DrawObj() are not compatable with the shader!\n");
+    }
     vertNum = tmpVertNum;
     this->shad = shad;
     device = GetCurrentDevice();

@@ -38,7 +38,7 @@ struct DrawInput{
 	std::list<ID*> inputDescs;
 	VkPipeline pipeline;
 	std::list<DrawCmdGroup*> cmds;
-	bool IDEquals(std::list<ID*> ids);
+	bool IDEquals(std::vector<ID*> ids);
 };
 
 struct ShaderMod {
@@ -57,8 +57,9 @@ struct Shader{
 	VkCommandPool cmdPool;
 	std::list<DrawTarget*> drawTargs;
 
-	SpvReflectInterfaceVariable** inputVars;
-	unsigned int inputCount;
+	std::vector<SpvReflectInterfaceVariable*> inputVars;
+	// SpvReflectInterfaceVariable** inputVars;
+	// unsigned int inputCount;
 	SpvReflectShaderModule mod;
 	// std::list<ID*> inputDescs;
 
@@ -71,11 +72,9 @@ struct Shader{
 
 	void RegisterSwapChain(SwapChain* swap);
 	void DestroySwapChain(SwapChain* swap);
-
 	void DrawFrame(Window* window);
-
 	bool ContainsSwap(SwapChain*);
-
+	bool CompatibleID(std::vector<ID*> ids);
 	// ID* GetNthID(unsigned int n);
 };
 
