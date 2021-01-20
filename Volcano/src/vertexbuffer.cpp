@@ -1,7 +1,7 @@
 #include "vertexbuffer.h"
 #include "shader.h"
 
-std::list<VertexBuffer*> vertexBufferList;
+std::list<Buffer*> bufferList;
 
 void CopyBuffer(Device* device,VkBuffer src,VkBuffer dst,VkDeviceSize size){
 	VkCommandBufferAllocateInfo cmdAllocInfo = {};
@@ -35,28 +35,7 @@ void CopyBuffer(Device* device,VkBuffer src,VkBuffer dst,VkDeviceSize size){
 	vkFreeCommandBuffers(device->device,device->transferCmdPool,1,&cmdBuff);
 }
 
-void VertexBuffer::AddToList(){
-	vertexBufferList.push_back(this);
-}
 
-VertexBuffer::~VertexBuffer(){
-	// for(auto shad : shaders){
-	// 	//should remove all refs from shaders
-	// 	shad->vertBuffs.remove(this);
-	// }
-	vkDestroyBuffer(device->device,stageBuff,NULL);
-	vkDestroyBuffer(device->device,fastBuff,NULL);
-	vkFreeMemory(device->device,fastBuffMem,NULL);
-	vkFreeMemory(device->device,stageMem,NULL);
-}
-
-void VertexBuffer::MapData(void** data){
-	vkMapMemory(device->device,stageMem,0,memSize,0,data);
-}
-void VertexBuffer::UnMapData(){
-	vkUnmapMemory(device->device,stageMem);
-	CopyBuffer(device,stageBuff,fastBuff,memSize);
-}
 void CreateBuffer(Device* device,uint64_t size, int usage,VkSharingMode share,VkMemoryPropertyFlags props,VkBuffer* buff,VkDeviceMemory* buffMem){
 	VkBufferCreateInfo buffInfo = {};
 	buffInfo.flags=0;
@@ -95,7 +74,34 @@ void CreateBuffer(Device* device,uint64_t size, int usage,VkSharingMode share,Vk
 
 	vkBindBufferMemory(device->device,*buff,*buffMem,0);
 }
-
+//usage example: VK_BUFFER_USAGE_INDEXBUFFER_BIT
+Buffer::Buffer(Device* device,unsigned int vertexNum, uint64_t size, int usage){
+	this->device = device;
+	memSize = size;
+	this->vertexNum = vertexNum;
+	CreateBuffer(device,size,usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,VK_SHARING_MODE_EXCLUSIVE,VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,&stageBuff,&stageMem);
+	CreateBuffer(device,size,usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage,VK_SHARING_MODE_EXCLUSIVE,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,&fastBuff,&fastMem);
+	bufferList.push_back(this);
+}
+Buffer::~Buffer(){
+	vkDestroyBuffer(device->device,stageBuff,NULL);
+	vkDestroyBuffer(device->device,fastBuff,NULL);
+	vkFreeMemory(device->device,fastMem,NULL);
+	vkFreeMemory(device->device,stageMem,NULL);
+}
+void Buffer::MapData(void** data){
+	vkMapMemory(device->device,stageMem,0,memSize,0,data);
+}
+void Buffer::UnMapData(){
+	vkUnmapMemory(device->device,stageMem);
+	CopyBuffer(device,stageBuff,fastBuff,memSize);
+}
+void IndexBuffer::MapData(void** data){
+	indexBuff->MapData(data);
+}
+void IndexBuffer::UnMapData(){
+	indexBuff->UnMapData();
+}
 unsigned int FormatSize(VkFormat format){
 	switch(format){
 		case VK_FORMAT_R8_SINT: return 1;

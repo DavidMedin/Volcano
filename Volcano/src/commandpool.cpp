@@ -82,10 +82,14 @@ void FillCommandBuffers(VkExtent2D swapChainExtent,std::vector<VkFramebuffer>* f
         VkDeviceSize* offsets = (VkDeviceSize*)calloc(1,sizeof(VkDeviceSize)*buffCount);
         unsigned int index = 0;
         for(auto buff : drawObj->vertBuffs){
-            vertBuffArray[index] = buff->fastBuff;//was stage buff before?
+            vertBuffArray[index] = buff->buff->fastBuff;
             index++;
         }
         vkCmdBindVertexBuffers(deCmdBuffs[i],0,(unsigned int)drawObj->vertBuffs.size(),vertBuffArray,offsets);
+        if(drawObj->indexBuff != nullptr){
+            vkCmdBindIndexBuffer(deCmdBuffs[i],drawObj->indexBuff->indexBuff->fastBuff,0,VK_INDEX_TYPE_UINT32);
+            vkCmdDrawIndexed(deCmdBuffs[i],drawObj->indexBuff->indexCount,1,0,0,0);
+        }else
         vkCmdDraw(deCmdBuffs[i],drawObj->vertNum,1,0,0);
 
         free(vertBuffArray);

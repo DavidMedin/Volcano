@@ -4,7 +4,7 @@
 std::list<Window*> windows;
 extern std::list<Shader*> shadList;
 extern std::list<Device*> deviceList;
-extern std::list<VertexBuffer*> vertexBufferList;
+extern std::list<Buffer*> bufferList;
 
 
 int doneInit = 0;
@@ -80,9 +80,12 @@ void DestroyVolcano(){
         for(auto shad : shadList){
             delete shad;
         }
-        for(auto vert : vertexBufferList){
+        shadList.clear();
+        for(auto vert : bufferList){
+            //going to be both vertex and index buffers for now
             delete vert;
         }
+        bufferList.clear();
         delete device;
     }
     delete GetCurrentInstance();

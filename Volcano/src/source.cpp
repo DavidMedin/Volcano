@@ -17,25 +17,23 @@ int main() {
 	Shader* shad = new Shader(&group,"Volcano/src/shaders/mainShad");
 	// Shader* secondShad = new Shader({id},&group,"Volcano/src/shaders/secondVertex.spv","Volcano/src/shaders/fragment.spv");
 
+	IndexBuffer* index = new IndexBuffer(6);
 
-	VertexBuffer* posBuff = new VertexBuffer(new ID(0,0,1,BufferRate::PER_VERTEX,shad),3);
-	VertexBuffer* colorAOffBuff = new VertexBuffer(new ID(1,2,2,BufferRate::PER_VERTEX,shad),3);
-	
-	VertexBuffer* posBuffOpp = new VertexBuffer(new ID(0,0,0,BufferRate::PER_VERTEX,shad),3);
-	VertexBuffer* colorAOffBuffOpp = new VertexBuffer(new ID(1,1,2,BufferRate::PER_VERTEX,shad),3);
-	
-	std::vector<glm::vec2> pos = {{0.0f, -0.5f},{0.5f, 0.5f},{-0.5f, 0.5f}};
-	std::vector<glm::vec2> offset = {{0.0f,1.0f},{.2f,0},{1.0f,.69f}};
-	std::vector<glm::vec3> color = {{1.0f, 0.0f, 0.0f},{0.0f, 1.0f, 0.0f},{1.0f, 0.0f, 1.0f}};
+	VertexBuffer* buff = new VertexBuffer(new ID(0,0,1,BufferRate::PER_VERTEX,shad),4);
+	// VertexBuffer* colorBuff = new VertexBuffer(new ID(1,1,1,BufferRate::PER_VERTEX,shad),4);
 
-	posBuff->WriteData(0,pos.data(),offset.data());
-	colorAOffBuff->WriteData(0,color.data());
+	std::vector<glm::vec2> pos = {{-0.5f, -0.5f},{0.5f, -0.5f},{0.5f, 0.5f},{-0.5f,0.5f}};
+	std::vector<glm::vec3> color = {{1.0f, 0.0f, 0.0f},{0.0f, 1.0f, 0.0f},{1.0f, 0.0f, 1.0f},{.835f,.687f,.6914f}};
 
-	posBuffOpp->WriteData(0,pos.data());
-	colorAOffBuffOpp->WriteData(0,offset.data(),color.data());
+	std::vector<uint32_t> indices = {0,1,2,0,2,3};
+	void* data;
+	index->MapData(&data);
+	memcpy(data,indices.data(),indices.size()*sizeof(uint32_t));
+	index->UnMapData();
 
-	DrawObj* buffDraw = new DrawObj({posBuff,colorAOffBuff},shad);
-	DrawObj* oppBuffs = new DrawObj({posBuffOpp,colorAOffBuffOpp},shad);
+	buff->WriteData(0,pos.data(),color.data());
+
+	DrawObj* buffDraw = new DrawObj({buff},index,shad);
 
 	window = new Window("TestWindow");
 	Window* anotherOne = new Window("Anotha One!");
@@ -51,9 +49,7 @@ int main() {
 		beforeTime = afterTime;
 
 		buffDraw->QueueDraw(window);
-		oppBuffs->QueueDraw(window);
 		buffDraw->QueueDraw(anotherOne);
-		oppBuffs->QueueDraw(anotherOne);
 		
 		window->Draw();
 		anotherOne->Draw();

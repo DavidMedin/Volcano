@@ -79,8 +79,13 @@ DrawObj::DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,IndexBuffer* ind
             Error("Vertex Buffer vertex number mismatch!\n");
             return;
         }
+        
+        ids.push_back(vert->inDesc);
         this->vertBuffs[i] = vert;
         i++;
+    }
+    if(!shad->CompatibleID(ids)){
+        Error("Vertex buffers given to DrawObj() are not compatable with the shader!\n");
     }
     vertNum = tmpVertNum;
     indexBuff = index;
@@ -106,6 +111,7 @@ DrawObj::DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,Shader* shad){
         Error("Vertex buffers given to DrawObj() are not compatable with the shader!\n");
     }
     vertNum = tmpVertNum;
+    indexBuff = nullptr;
     this->shad = shad;
     device = GetCurrentDevice();
 
