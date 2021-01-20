@@ -58,15 +58,11 @@ struct Shader{
 	std::list<DrawTarget*> drawTargs;
 
 	std::vector<SpvReflectInterfaceVariable*> inputVars;
-	// SpvReflectInterfaceVariable** inputVars;
-	// unsigned int inputCount;
 	SpvReflectShaderModule mod;
-	// std::list<ID*> inputDescs;
 
 	Shader(ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
 	// Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
 	Shader(ShaderGroup* shaderGroup,const char* glslShader);
-	// Shader(ShaderGroup* shaderGroup,const char* glslShader);
 	// Shader(std::initializer_list<ID*> ids,ShaderGroup* shaderGroup,const char* glslShader);
 	~Shader();
 
@@ -75,7 +71,6 @@ struct Shader{
 	void DrawFrame(Window* window);
 	bool ContainsSwap(SwapChain*);
 	bool CompatibleID(std::vector<ID*> ids);
-	// ID* GetNthID(unsigned int n);
 };
 
 
