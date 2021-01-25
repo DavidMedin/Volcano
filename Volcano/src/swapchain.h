@@ -11,6 +11,7 @@
 struct Shader;
 struct DrawCmdGroup;
 struct SwapChain {
+	VkDescriptorPool descriptorPool;
 
 	Device* device;
 	VkSwapchainKHR swapChain;

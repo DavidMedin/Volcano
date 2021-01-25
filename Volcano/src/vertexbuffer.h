@@ -95,12 +95,6 @@ struct ID{
 	ID(unsigned int bufferLoc,unsigned int beginLoc,unsigned int endLoc,BufferRate rate,Shader* shad);
 };
 
-struct UniformBuffer{
-	VkDescriptorSetLayoutBinding descLayout;
-
-	//stages look like VK_SHADER_STAGE_VERTEX_BIT, where VERTEX can be FRAGMENT or whatever stages (you can | them together)
-	UniformBuffer(unsigned int binding,VkShaderStageFlags stages);
-};
 
 
 struct Buffer{

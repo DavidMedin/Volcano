@@ -1,5 +1,7 @@
 #include "devices.h"
 #include "commandpool.h"
+#include "descriptorSet.h"
+
 std::list<Device*> deviceList;
 Device* currentDevice=nullptr;
 

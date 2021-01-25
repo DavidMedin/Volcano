@@ -3,15 +3,6 @@
 
 std::list<Buffer*> bufferList;
 
-UniformBuffer::UniformBuffer(unsigned int binding,VkShaderStageFlags stages){
-	descLayout = {};
-	descLayout.binding = binding;
-	descLayout.stageFlags = stages;
-	descLayout.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descLayout.pImmutableSamplers = nullptr;
-
-}
-
 void CopyBuffer(Device* device,VkBuffer src,VkBuffer dst,VkDeviceSize size){
 	VkCommandBufferAllocateInfo cmdAllocInfo = {};
 	cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -179,5 +170,4 @@ ID::ID(unsigned int bufferLoc,unsigned int beginLoc,unsigned int endLoc,BufferRa
 	}
 	size = bindDesc.stride;
 }
-
 

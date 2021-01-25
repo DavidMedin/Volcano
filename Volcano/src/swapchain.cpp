@@ -1,6 +1,7 @@
 #include "swapchain.h"
 #include "shader.h"
 #include "draw.h"
+#include "descriptorSet.h"
 extern std::list<SwapChain*> swapList;
 extern std::list<Shader*> shadList;
 
@@ -169,11 +170,7 @@ SwapChain::SwapChain(Device* devDets, VkSurfaceKHR surface) {
         CreateSemaphore(device->device, &(presentable[i]));
         CreateFence(device->device, &(fences[i]));
     }
-
-    //deprecated because of https://trello.com/c/h9QYwvHr/38-draw-separate-objects
-    // for (auto shad : shadList) {
-    //     shad->RegisterSwapChain(this);
-    // }
+    descriptorPool = CreateDescriptorPool(device,imageCount);
 }
 SwapChain::~SwapChain() {
     for (unsigned int i = 0; i < imageCount; i++) {

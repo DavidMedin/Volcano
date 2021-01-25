@@ -18,9 +18,7 @@ int main() {
 	// Shader* secondShad = new Shader({id},&group,"Volcano/src/shaders/secondVertex.spv","Volcano/src/shaders/fragment.spv");
 
 	IndexBuffer* index = new IndexBuffer(6);
-
 	VertexBuffer* buff = new VertexBuffer(new ID(0,0,1,BufferRate::PER_VERTEX,shad),4);
-	// VertexBuffer* colorBuff = new VertexBuffer(new ID(1,1,1,BufferRate::PER_VERTEX,shad),4);
 
 	std::vector<glm::vec2> pos = {{-0.5f, -0.5f},{0.5f, -0.5f},{0.5f, 0.5f},{-0.5f,0.5f}};
 	std::vector<glm::vec3> color = {{1.0f, 0.0f, 0.0f},{0.0f, 1.0f, 0.0f},{1.0f, 0.0f, 1.0f},{.835f,.687f,.6914f}};
@@ -50,7 +48,7 @@ int main() {
 
 		buffDraw->QueueDraw(window);
 		buffDraw->QueueDraw(anotherOne);
-		
+
 		window->Draw();
 		anotherOne->Draw();
 		glfwPollEvents();

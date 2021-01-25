@@ -35,7 +35,9 @@ struct DrawTarget{
 };
 struct DrawInput{
 	DrawTarget* targ;
+	//input descriptions
 	std::list<ID*> inputDescs;
+	
 	VkPipeline pipeline;
 	std::list<DrawCmdGroup*> cmds;
 	bool IDEquals(std::vector<ID*> ids);
@@ -57,7 +59,10 @@ struct Shader{
 	VkCommandPool cmdPool;
 	std::list<DrawTarget*> drawTargs;
 
+	std::vector<VkDescriptorSetLayout> descriptorSetLayout;
+
 	std::vector<SpvReflectInterfaceVariable*> inputVars;
+	// std::vector<SpvReflectDescriptorSet*> descriptorSets;
 	SpvReflectShaderModule mod;
 
 	Shader(ShaderGroup* shaderGroup,const char* vertexShader,const char* fragmentShader);
@@ -75,7 +80,7 @@ struct Shader{
 
 
 int ReadTheFile(const char* path, char** buff, unsigned int* buffSize);
-VkPipelineLayout CreatePipeLayout(Device* device);
+VkPipelineLayout CreatePipeLayout(Device* device,std::vector<VkDescriptorSetLayout>* setLayouts);
 VkPipeline CreateGraphicsPipeline(Device* device, VkPipelineLayout layout, VkRenderPass renderPass, VkExtent2D viewExtent, ShaderMod* mods,unsigned int modCount,std::list<ID*> inputDescs);
 
 VkShaderModule CreateShaderModule(Device* device, char* code, unsigned int codeSize);

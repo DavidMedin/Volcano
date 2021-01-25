@@ -2,7 +2,7 @@ workspace"Volcano"
 	configurations {"Debug","Release"}
 	architecture "x86_64"
 project "Volcano"
-	location "Volcano"
+	location "."
 	objdir "%{prj.name}/tmp"
 	kind "ConsoleApp"
 	language "C++"
