@@ -17,6 +17,8 @@ int main() {
 	Shader* shad = new Shader(&group,"Volcano/src/shaders/mainShad");
 	// Shader* secondShad = new Shader({id},&group,"Volcano/src/shaders/secondVertex.spv","Volcano/src/shaders/fragment.spv");
 
+	DescriptorSet* set = new DescriptorSet(shad,0);
+
 	IndexBuffer* index = new IndexBuffer(6);
 	VertexBuffer* buff = new VertexBuffer(new ID(0,0,1,BufferRate::PER_VERTEX,shad),4);
 

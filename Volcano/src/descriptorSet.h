@@ -2,23 +2,48 @@
 #include <stdio.h>
 #include <glm.hpp>
 #include <vector>
+#include <list>
 
 #include "globalVulkan.h"
 #include "errorCatch.h"
+#include "spirv_reflect.h"
 struct Device;
+struct Shader;
+struct SwapChain;
+struct DescriptorSet;
 
 //should probably have a max poolSize as well
-VkDescriptorPool CreateDescriptorPool(Device* device,int poolSize);
 
-
-struct UniformBuffer{//this is a binding
-	VkBuffer buff;
-	//stages look like VK_SHADER_STAGE_VERTEX_BIT, where VERTEX can be FRAGMENT or whatever stages (you can | them together)
-	UniformBuffer(VkDescriptorPool pool,unsigned int binding,VkShaderStageFlags stages);
+struct DescriptorBinding{
+	DescriptorSet* set;
+	SpvReflectDescriptorBinding* bindingInfo;
 };
 
-//function in shader to get descriptorset with set #
+VkDescriptorPool CreateDescriptorPool(Device* device,int imageCount,std::vector<DescriptorBinding> descTypes);
+
 struct DescriptorSet{
+	Device* device;
 	VkDescriptorSetLayout layout;
-	std::vector<UniformBuffer> uniforms;
+
+	struct SetPerSwap{
+		SwapChain* swap;
+		VkDescriptorPool pool;
+		struct SetBuffers{
+			VkBuffer buff;
+			VkDeviceMemory mem;
+		};
+		std::vector<std::vector<SetBuffers>> mems;//[imageCount[bindingCount]]
+		// std::vector<VkBuffer> buffs;
+		// std::vector<VkDeviceMemory> mems;
+		std::vector<VkDescriptorSet> sets;
+
+	};
+	std::list<SetPerSwap> swaps;
+	std::vector<DescriptorBinding> bindings;
+	
+	DescriptorSet(Shader* shad,int setNum);
+	void RegisterSwap(SwapChain* swap);
+	void RemoveSwapChain(SwapChain* swap);
 };
+
+//don't forget to recreate with the swapchain!

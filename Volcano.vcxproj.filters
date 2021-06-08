@@ -18,6 +18,9 @@
     <ClInclude Include="Volcano\src\commandpool.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="Volcano\src\descriptorSet.h">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="Volcano\src\devices.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -60,6 +63,9 @@
       <Filter>libs\SPIRV-Reflect</Filter>
     </ClCompile>
     <ClCompile Include="Volcano\src\commandpool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="Volcano\src\descriptorSet.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="Volcano\src\devices.cpp">

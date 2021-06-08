@@ -160,7 +160,7 @@ Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
 	rez = spvReflectEnumerateDescriptorSets(&mod,&inputCount,descriptorSets.data());
 	assert(rez == SPV_REFLECT_RESULT_SUCCESS);
 	assert(inputCount != 0);
-	descriptorSetLayout.resize(inputCount);
+	descriptorSetLayouts.resize(inputCount);
 	unsigned int setI=0;
 	for(auto set : descriptorSets){
 		//create set layout
@@ -177,17 +177,19 @@ Shader::Shader(ShaderGroup* shaderGroup, const char* glslShader){
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		layoutInfo.bindingCount = set->binding_count;
 		layoutInfo.pBindings = bindings.data();
-		if(vkCreateDescriptorSetLayout(device->device,&layoutInfo,NULL,&descriptorSetLayout[setI])!=VK_SUCCESS){
+		if(vkCreateDescriptorSetLayout(device->device,&layoutInfo,NULL,&descriptorSetLayouts[setI])!=VK_SUCCESS){
 			Error("Couldn't create descriptor set layout!\n");
 			return;
 		}
+		descriptorSetDescs.push_back(set);
 		setI++;
 	}
-	pipelineLayout = CreatePipeLayout(device,&descriptorSetLayout);
-
+	pipelineLayout = CreatePipeLayout(device,&descriptorSetLayouts);
+	createdSets.resize(descriptorSets.size());
 
 	shadList.push_back(this);
 }
+
 // Shader::Shader(ShaderGroup* shaderGroup,const char* glslShader){
 //     this->device = GetCurrentDevice();
 //     this->group = shaderGroup;
@@ -220,7 +222,7 @@ Shader::Shader(ShaderGroup* shaderGroup,const char* vertexShader,const char* fra
 		shadMods[i].mod = CreateShaderModule(device, code, codeSize);
 		free(code);
 	}
-	pipelineLayout = CreatePipeLayout(device,&descriptorSetLayout);
+	pipelineLayout = CreatePipeLayout(device,&descriptorSetLayouts);
 	//use spriv-reflect to get shader input ID
 
 

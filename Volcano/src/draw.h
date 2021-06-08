@@ -14,6 +14,7 @@ struct SwapChain;
 struct Window;
 struct Device;
 struct ID;
+struct DescriptorSet;
 
 struct DrawObj;
 struct DrawCmdGroup{
@@ -26,6 +27,7 @@ struct DrawObj{
     Device* device;
     std::vector<VertexBuffer*> vertBuffs;
     std::vector<ID*> ids;
+    std::vector<DescriptorSet*> sets;
     IndexBuffer* indexBuff;
     Shader* shad;
     unsigned int vertNum;
@@ -37,6 +39,7 @@ struct DrawObj{
     DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,IndexBuffer* index,Shader* shad);
     DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,Shader* shad);
     void RegisterSwapChain(SwapChain* swap);
+    void BindSet(DescriptorSet* set);
     void RecalculateCmdBuffs(DrawCmdGroup* group);
     void QueueDraw(Window* win);
 };

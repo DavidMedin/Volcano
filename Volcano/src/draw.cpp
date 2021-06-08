@@ -2,6 +2,8 @@
 #include "vertexbuffer.h"
 #include "shader.h"
 #include "window.h"
+#include "descriptorSet.h"
+
 
 bool DrawContains(DrawObj* obj, SwapChain* swap){
     for(auto tmpSwap:obj->registeredSwaps){
@@ -87,6 +89,7 @@ DrawObj::DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,IndexBuffer* ind
     if(!shad->CompatibleID(ids)){
         Error("Vertex buffers given to DrawObj() are not compatable with the shader!\n");
     }
+    sets.resize(shad->descriptorSetLayouts.size());
     vertNum = tmpVertNum;
     indexBuff = index;
     this->shad = shad;
@@ -110,11 +113,19 @@ DrawObj::DrawObj(std::initializer_list<VertexBuffer*> vertBuffs,Shader* shad){
     if(!shad->CompatibleID(ids)){
         Error("Vertex buffers given to DrawObj() are not compatable with the shader!\n");
     }
+    sets.resize(shad->descriptorSetLayouts.size());
     vertNum = tmpVertNum;
     indexBuff = nullptr;
     this->shad = shad;
     device = GetCurrentDevice();
-
+}
+void DrawObj::BindSet(DescriptorSet* set){
+    //add set to list
+    sets.push_back(set);
+    //recreate command buffers
+    for(auto cmdGroup : drawCmds){
+        RecalculateCmdBuffs(cmdGroup);
+    }
 }
 void DrawObj::QueueDraw(Window* win){
     SwapChain* swap = win->swapchain;

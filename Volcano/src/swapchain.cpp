@@ -170,7 +170,6 @@ SwapChain::SwapChain(Device* devDets, VkSurfaceKHR surface) {
         CreateSemaphore(device->device, &(presentable[i]));
         CreateFence(device->device, &(fences[i]));
     }
-    descriptorPool = CreateDescriptorPool(device,imageCount);
 }
 SwapChain::~SwapChain() {
     for (unsigned int i = 0; i < imageCount; i++) {
@@ -303,6 +302,14 @@ void SwapChain::Recreate() {
                     for(auto cmd : input->cmds){
                         cmd->draw->RecalculateCmdBuffs(cmd);
                     }
+                }
+            }
+        }
+        for(auto set : shad->createdSets){
+            for(auto setSwap : set->swaps){
+                if(setSwap.swap == this){
+                    set->RegisterSwap(this);
+                    break;
                 }
             }
         }

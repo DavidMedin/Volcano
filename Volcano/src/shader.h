@@ -16,6 +16,7 @@
 void CreateFramebuffers(VkDevice device, VkRenderPass render, VkImageView* imageViews, unsigned int imageCount, VkExtent2D extent, std::vector<VkFramebuffer>* framebuffIn);
 
 
+struct DescriptorSet;
 struct VertexBuffer;
 struct SwapChain;
 struct Shader;
@@ -59,7 +60,9 @@ struct Shader{
 	VkCommandPool cmdPool;
 	std::list<DrawTarget*> drawTargs;
 
-	std::vector<VkDescriptorSetLayout> descriptorSetLayout;
+	std::vector<DescriptorSet*> createdSets;
+	std::vector<SpvReflectDescriptorSet*> descriptorSetDescs;
+	std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
 
 	std::vector<SpvReflectInterfaceVariable*> inputVars;
 	// std::vector<SpvReflectDescriptorSet*> descriptorSets;

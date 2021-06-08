@@ -9,7 +9,6 @@ layout(set=0,binding=0) uniform Transformation{
 	mat4 view;
 }camera;
 
-
 layout(location=0) out vec3 vertColor;
 
 void main(){

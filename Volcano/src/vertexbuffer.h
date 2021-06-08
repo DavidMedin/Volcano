@@ -41,7 +41,7 @@ VkFormat GetTypeFormat(){
 	}
 }
 
-// void CreateBuffer(Device* device,uint64_t size, int usage,VkSharingMode share,VkMemoryPropertyFlags props,VkBuffer* buff,VkDeviceMemory* buffMem);
+void CreateBuffer(Device* device,uint64_t size, int usage,VkSharingMode share,VkMemoryPropertyFlags props,VkBuffer* buff,VkDeviceMemory* buffMem);
 
 //InputDescription
 struct ID{
