@@ -1,0 +1,20 @@
+cmake_minimum_required(VERSION 3.20)
+set(CMAKE_TOOLCHAIN_FILE $ENV{VCPKG_ROOT}scripts/buildsystems/vcpkg.cmake)
+project(Volcano)
+
+file(GLOB SRC Volcano/src/*.cpp)
+file(GLOB SRC_HEADER Volcano/src/)
+file(GLOB SPIRV_REFLECT Volcano/libs/Spirv-reflect/*.c)
+file(GLOB SPIRV_HEADER Volcano/libs/Spirv-reflect)
+add_executable(Volcano ${SRC} ${SPIRV_REFLECT})
+
+find_package(glfw3 CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(Vulkan)
+message(STATUS ${Vulkan_LIBRARY})
+set_target_properties(Volcano PROPERTIES 
+	target_compile_options(Volcano PRIVATE "/Zc:preprocessor")
+    VS_DEBUGGER_WORKING_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_directories(Volcano PRIVATE ${Vulkan_LIBRARY}/../)
+target_link_libraries(Volcano PRIVATE glfw glm shaderc_shared ${Vulkan_LIBRARIES})
+target_include_directories(Volcano PRIVATE ${SRC_HEADER} ${SPIRV_HEADER} ${Vulkan_INCLUDE_DIRS})

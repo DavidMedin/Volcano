@@ -1,4 +1,5 @@
 #include "source.h"
+#include <Windows.h>
 Window* window;
 
 // struct Test_t{
@@ -8,13 +9,15 @@ Window* window;
 
 int main() {
 
-
+	char* cwd = (char*)malloc(100);
+	GetCurrentDirectory(100,(LPTSTR)cwd);
+	printf("CWD is %s\n",cwd);
 	InitVolcano();
 
 	ShaderGroup group = ShaderGroup(0);//will contain description of renderpass in the future, or nothing for default
 
 
-	Shader* shad = new Shader(&group,"Volcano/src/shaders/mainShad");
+	Shader* shad = new Shader(&group,"../../Volcano/src/shaders/mainShad");
 	// Shader* secondShad = new Shader({id},&group,"Volcano/src/shaders/secondVertex.spv","Volcano/src/shaders/fragment.spv");
 
 	IndexBuffer* index = new IndexBuffer(6);
